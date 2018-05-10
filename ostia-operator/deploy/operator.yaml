@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ostia-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: ostia-operator
+  template:
+    metadata:
+      labels:
+        name: ostia-operator
+    spec:
+      containers:
+        - name: ostia-operator
+          image: quay.io/3scale/ostia-operator:v0.1
+          command:
+          - ostia-operator
+          imagePullPolicy: Always
