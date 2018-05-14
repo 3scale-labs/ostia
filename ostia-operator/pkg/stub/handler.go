@@ -19,10 +19,12 @@ import (
 	"reflect"
 )
 
+// NewHandler returns a Handler
 func NewHandler() handler.Handler {
 	return &Handler{}
 }
 
+// Handler definition
 type Handler struct {
 }
 
@@ -40,24 +42,30 @@ type APIcastConfig struct {
 	Services []APIcastServices `json:"services"`
 }
 
+// APIcastServices defines the services object
 type APIcastServices struct {
 	Proxy APIcastProxy `json:"proxy"`
 }
 
+// APIcastPolicyChain contains a policy name and it's configuration
 type APIcastPolicyChain struct {
 	Name          string                          `json:"name"`
 	Configuration APIcastPolicyChainConfiguration `json:"configuration"`
 }
 
+// APIcastPolicyChainConfiguration contains a group of APIcastPolicyChainRule
 type APIcastPolicyChainConfiguration struct {
 	Rules []APIcastPolicyChainRule `json:"rules"`
 }
 
+// APIcastProxy defines the proxy struct for APIcast configuration
 type APIcastProxy struct {
 	PolicyChain []APIcastPolicyChain `json:"policy_chain"`
 	Hosts       []string             `json:"hosts"`
 }
 
+// TODO: Not all Chain Rules have this struct.
+//APIcastPolicyChainRule Defines the content of a rule
 type APIcastPolicyChainRule struct {
 	Regex string `json:"regex"`
 	URL   string `json:"url"`
