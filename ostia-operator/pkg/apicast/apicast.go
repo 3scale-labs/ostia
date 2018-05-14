@@ -23,20 +23,22 @@ func DeploymentConfig(api *v1alpha1.API) *openshiftv1.DeploymentConfig {
 
 	apicastLabels := labelsForAPIcast(api.Name)
 	apicastConfig := createConfig(api)
+	apicastName := apicastName(api)
+
 	deploymentConfig := &openshiftv1.DeploymentConfig{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps.openshift.io/v1",
 			Kind:       "DeploymentConfig",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "apicast-" + api.Name, //TODO: This is used everywhere and should be extracted to a func.
+			Name:      apicastName,
 			Namespace: api.Namespace,
 			Labels:    apicastLabels,
 		},
 		Spec: openshiftv1.DeploymentConfigSpec{
 			Replicas: 1,
 			Selector: map[string]string{
-				"deploymentconfig": "apicast-" + api.Name,
+				"deploymentconfig": apicastName,
 			},
 			Strategy: openshiftv1.DeploymentStrategy{
 				Type: openshiftv1.DeploymentStrategyTypeRolling,
@@ -44,13 +46,13 @@ func DeploymentConfig(api *v1alpha1.API) *openshiftv1.DeploymentConfig {
 			Template: &v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"deploymentconfig": "apicast-" + api.Name,
+						"deploymentconfig": apicastName,
 						"app":              "apicast",
 					},
 				},
 				Spec: v1.PodSpec{ //TODO: Add healthchecks
 					Containers: []v1.Container{{
-						Image: ApicastImage + ":" + ApicastVersion,
+						Image: apicastImage + ":" + apicastVersion,
 						Name:  "apicast",
 						Ports: []v1.ContainerPort{
 							{ContainerPort: 8080, Name: "proxy", Protocol: "TCP"},
@@ -75,7 +77,8 @@ func DeploymentConfig(api *v1alpha1.API) *openshiftv1.DeploymentConfig {
 // Service returns a k8s service object for APIcast
 func Service(api *v1alpha1.API) *v1.Service {
 
-	APIcastLabels := labelsForAPIcast(api.Name)
+	apicastLabels := labelsForAPIcast(api.Name)
+	apicastName := apicastName(api)
 
 	service := &v1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -83,9 +86,9 @@ func Service(api *v1alpha1.API) *v1.Service {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "apicast-" + api.Name,
+			Name:      apicastName,
 			Namespace: api.Namespace,
-			Labels:    APIcastLabels,
+			Labels:    apicastLabels,
 		},
 		Spec: v1.ServiceSpec{
 			Ports: []v1.ServicePort{
@@ -93,7 +96,7 @@ func Service(api *v1alpha1.API) *v1.Service {
 				{Name: "management", Port: 8090, Protocol: "TCP", TargetPort: intstr.FromInt(8090)},
 			},
 			Selector: map[string]string{
-				"deploymentconfig": "apicast-" + api.Name,
+				"deploymentconfig": apicastName,
 			},
 		},
 	}
@@ -107,6 +110,7 @@ func Service(api *v1alpha1.API) *v1.Service {
 func Route(api *v1alpha1.API) *routev1.Route {
 
 	APIcastLabels := labelsForAPIcast(api.Name)
+	apicastName := apicastName(api)
 
 	route := &routev1.Route{
 		TypeMeta: metav1.TypeMeta{
@@ -114,7 +118,7 @@ func Route(api *v1alpha1.API) *routev1.Route {
 			Kind:       "Route",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "apicast-" + api.Name,
+			Name:      apicastName,
 			Namespace: api.Namespace,
 			Labels:    APIcastLabels,
 		},
@@ -122,7 +126,7 @@ func Route(api *v1alpha1.API) *routev1.Route {
 			Host: api.Spec.Hostname,
 			To: routev1.RouteTargetReference{
 				Kind: "Service",
-				Name: "apicast-" + api.Name,
+				Name: apicastName,
 			},
 			Port: &routev1.RoutePort{
 				TargetPort: intstr.FromString("proxy"),
@@ -158,7 +162,7 @@ func createConfig(api *v1alpha1.API) string {
 		apicastHosts = append(apicastHosts, api.Spec.Hostname)
 	}
 
-	apicastHosts = append(apicastHosts, "apicast-"+api.Name)
+	apicastHosts = append(apicastHosts, apicastName(api))
 
 	apicastConfig := &Config{
 		Services: []Services{
@@ -199,4 +203,8 @@ func asOwner(api *v1alpha1.API) metav1.OwnerReference {
 		UID:        api.UID,
 		Controller: &trueVar,
 	}
+}
+
+func apicastName(api *v1alpha1.API) string {
+	return "apicast-" + api.Name
 }

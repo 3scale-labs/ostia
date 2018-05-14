@@ -1,8 +1,8 @@
 package apicast
 
 const (
-	ApicastImage   = "quay.io/3scale/apicast"
-	ApicastVersion = "3.2-stable"
+	apicastImage   = "quay.io/3scale/apicast"
+	apicastVersion = "3.2-stable"
 )
 
 // Config is the configuration for APIcast

@@ -14,8 +14,10 @@ const (
 )
 
 var (
+	// SchemeBuilder collects functions that add things to an scheme
 	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
-	AddToScheme   = SchemeBuilder.AddToScheme
+	// AddToScheme Applies stored functions to the scheme
+	AddToScheme = SchemeBuilder.AddToScheme
 	// SchemeGroupVersion is the group version used to register these objects.
 	SchemeGroupVersion = schema.GroupVersion{Group: groupName, Version: version}
 )
