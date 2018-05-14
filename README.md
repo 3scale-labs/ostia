@@ -8,7 +8,7 @@ This is a not supported/official redhat product.
 
 * To learn how to deploy openshift locally:
 
-https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md
+<https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md>
 
 * Clone the repo:
 
@@ -23,7 +23,7 @@ cd ostia
 oc create -f ostia-operator/deploy/crd.yaml
 ```
 
-* Add cluster-admin perms to the ostia default user, so operator can watch events in all the namespaces:
+* Add cluster-admin perms to the ostia default user, so it can watch events on all namespaces:
 
 ```
 oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:ostia:default
@@ -46,28 +46,29 @@ oc create -f ostia-operator/deploy/cr.yaml
 ## Build
 
 * Prerequisites:
-
-    * Go >= 1.10
-    * Go Dep (https://github.com/golang/dep)
-    * Operator-SDK (https://github.com/operator-framework/operator-sdk)
+  * Go >= 1.10
+  * Go Dep (<https://github.com/golang/dep>)
+  * Operator-SDK (<https://github.com/operator-framework/operator-sdk>)
 
 * Installing Go:
 
-Please refer to the official docs: https://golang.org/doc/install
+Please refer to the official docs: <https://golang.org/doc/install>
 
 * Installing Go Dep:
 
 Mac:
+
 ```
 brew install dep
 ```
 
 Other Platforms:
+
 ```
 curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 ```
 
-* Let's install the operator-sdk, make sure `$GOPATH` is set, and your PATH includes `$GOPATH/bin`
+* Let's install the operator-sdk, make sure `$GOPATH` is set and included in PATH `$GOPATH/bin`
 
 ```
 mkdir -p $GOPATH/src/github.com/operator-framework/
