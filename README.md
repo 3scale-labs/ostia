@@ -23,7 +23,7 @@ cd ostia
 oc create -f ostia-operator/deploy/crd.yaml
 ```
 
-* Add cluster-admin perms to the ostia default user, so it can watch events on all namespaces:
+* Add cluster-admin perms to the ostia default user: (needs fix)
 
 ```
 oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:ostia:default
@@ -68,7 +68,7 @@ Other Platforms:
 curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 ```
 
-* Let's install the operator-sdk, make sure `$GOPATH` is set and included in PATH `$GOPATH/bin`
+* Install the operator-sdk:
 
 ```
 mkdir -p $GOPATH/src/github.com/operator-framework/
