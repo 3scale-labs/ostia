@@ -13,8 +13,6 @@ func Reconcile(api *v1alpha1.API) (err error) {
 
 	log.Infof("[%s] Got API Object: %s", api.Namespace, api.Name)
 
-	api = api.DeepCopy()
-
 	// Reconcile DeploymentConfig object
 	err = reconcileDeploymentConfig(api)
 	if err != nil {
