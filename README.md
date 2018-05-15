@@ -48,7 +48,7 @@ oc create -f ostia-operator/deploy/cr.yaml
 * Prerequisites:
   * Go >= 1.10
   * Go Dep (<https://github.com/golang/dep>)
-  * Operator-SDK (<https://github.com/operator-framework/operator-sdk>)
+  * Operator-SDK v0.0.5 (<https://github.com/operator-framework/operator-sdk>)
 
 * Installing Go:
 
@@ -76,6 +76,7 @@ git clone https://github.com/operator-framework/operator-sdk.git \
           $GOPATH/src/github.com/operator-framework/operator-sdk
 
 cd $GOPATH/src/github.com/operator-framework/operator-sdk
+git checkout v0.0.5
 dep ensure
 go install github.com/operator-framework/operator-sdk/commands/operator-sdk
 ```
