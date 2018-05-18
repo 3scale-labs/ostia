@@ -49,6 +49,7 @@ oc create -f ostia-operator/deploy/cr.yaml
   * Go >= 1.10
   * Go Dep (<https://github.com/golang/dep>)
   * Operator-SDK v0.0.5 (<https://github.com/operator-framework/operator-sdk>)
+  * Docker
 
 * Installing Go:
 
@@ -68,32 +69,26 @@ Other Platforms:
 curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 ```
 
-* Install the operator-sdk:
+* Get the Ostia code
 
 ```
-mkdir -p $GOPATH/src/github.com/operator-framework/
-git clone https://github.com/operator-framework/operator-sdk.git \
-          $GOPATH/src/github.com/operator-framework/operator-sdk
-
-cd $GOPATH/src/github.com/operator-framework/operator-sdk
-git checkout v0.0.5
-dep ensure
-go install github.com/operator-framework/operator-sdk/commands/operator-sdk
-```
-
-* Clone the ostia repo into your GOPATH
-
-```
-mkdir -p ${GOPATH}/src/github.com/3scale/
-git clone https://github.com/3scale/ostia.git ${GOPATH}/src/github.com/3scale/ostia
+go get github.com/3scale/ostia
 ```
 
 * Run dep ensure
 
 ```
 cd ${GOPATH}/src/github.com/3scale/ostia/ostia-operator
-dep ensure
+dep ensure -v
 ```
+
+* Install operator-framework from vendored sources
+
+```
+go install ./vendor/github.com/operator-framework/operator-sdk/commands/operator-sdk
+```
+
+Make sure ${GOPATH}/bin is added to your PATH
 
 * Build
 
