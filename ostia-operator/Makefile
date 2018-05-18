@@ -3,10 +3,12 @@ NAMESPACE=quay.io/3scale
 VERSION := v0.1
 IMAGE := $(NAMESPACE)/$(NAME):$(VERSION)
 
-all: build
+all: generate build
+
+generate:
+	@operator-sdk generate k8s
 
 build:
-	@operator-sdk generate k8s
 	@operator-sdk build $(IMAGE)
 
 test: build
