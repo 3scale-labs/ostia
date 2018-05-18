@@ -126,6 +126,12 @@
   revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
+  name = "github.com/inconshreveable/mousetrap"
+  packages = ["."]
+  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
+  version = "v1.0"
+
+[[projects]]
   name = "github.com/json-iterator/go"
   packages = ["."]
   revision = "ca39e5af3ece67bbcda3d0f4f56a8e24d9f2dad4"
@@ -170,6 +176,11 @@
 [[projects]]
   name = "github.com/operator-framework/operator-sdk"
   packages = [
+    "commands/operator-sdk",
+    "commands/operator-sdk/cmd",
+    "commands/operator-sdk/cmd/generate",
+    "commands/operator-sdk/error",
+    "pkg/generator",
     "pkg/k8sclient",
     "pkg/sdk",
     "pkg/sdk/action",
@@ -200,6 +211,12 @@
   packages = ["."]
   revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
   version = "v1.0.5"
+
+[[projects]]
+  name = "github.com/spf13/cobra"
+  packages = ["."]
+  revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
+  version = "v0.0.3"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -412,6 +429,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "730620eb750e7b375a27600b01807da1391416860e9a00baf1a95f490b2df628"
+  inputs-digest = "664f8696304f0dfded9677d6487f3f6f7e0c429278fdd99112c00820df7413e1"
   solver-name = "gps-cdcl"
   solver-version = 1
