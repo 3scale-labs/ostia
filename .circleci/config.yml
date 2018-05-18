@@ -1,0 +1,40 @@
+version: 2
+jobs:
+  build:
+    docker:
+      # CircleCI Go images available at: https://hub.docker.com/r/circleci/golang/
+      - image: circleci/golang:1.10
+
+    working_directory: /go/src/github.com/3scale/ostia
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - v1-gopkg-cache-{{ arch }}-{{ checksum "ostia-operator/Gopkg.lock" }}
+            - v1-gopkg-cache-{{ arch }}-{{ .Branch }}
+
+      - run:
+          name: Install dependencies
+          working_directory: ostia-operator
+          command: |
+            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+
+            dep ensure -v
+            go install ./vendor/github.com/operator-framework/operator-sdk/commands/operator-sdk
+
+      - save_cache:
+          key: v1-gopkg-cache-{{ arch }}-{{ checksum "ostia-operator/Gopkg.lock" }}
+          paths:
+            - "/go/pkg"
+
+      - setup_remote_docker:
+          reusable: true
+          exclusive: false
+
+      - run:
+          name: Build ostia-operator
+          working_directory: ostia-operator
+          command: |
+              make build
