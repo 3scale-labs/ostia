@@ -1,16 +1,17 @@
 package apicast
 
 import (
-	"k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
+	"encoding/json"
 	"net/url"
 
-	"encoding/json"
 	"github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
 	openshiftv1 "github.com/openshift/api/apps/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	log "github.com/sirupsen/logrus"
+
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 //TODO: Define proper labels.
@@ -20,7 +21,6 @@ func labelsForAPIcast(name string) map[string]string {
 
 // DeploymentConfig returns an openshift deploymentConfig object for APIcast
 func DeploymentConfig(api *v1alpha1.API) *openshiftv1.DeploymentConfig {
-
 	apicastLabels := labelsForAPIcast(api.Name)
 	apicastConfig := createConfig(api)
 	apicastName := apicastName(api)
@@ -50,28 +50,30 @@ func DeploymentConfig(api *v1alpha1.API) *openshiftv1.DeploymentConfig {
 						"app":              "apicast",
 					},
 				},
-				Spec: v1.PodSpec{ //TODO: Add healthchecks
-					Containers: []v1.Container{{
-						Image: apicastImage + ":" + apicastVersion,
-						Name:  "apicast",
-						Ports: []v1.ContainerPort{
-							{ContainerPort: 8080, Name: "proxy", Protocol: "TCP"},
-							{ContainerPort: 8090, Name: "management", Protocol: "TCP"},
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						{
+							Image: apicastImage + ":" + apicastVersion,
+							Name:  "apicast",
+							Ports: []v1.ContainerPort{
+								{ContainerPort: 8080, Name: "proxy", Protocol: "TCP"},
+								{ContainerPort: 8090, Name: "management", Protocol: "TCP"},
+							},
+							Env: []v1.EnvVar{
+								{Name: "APICAST_LOG_LEVEL", Value: "debug"},
+								{Name: "THREESCALE_CONFIG_FILE", Value: "/tmp/load.json"},
+								{Name: "APICAST_CONFIGURATION", Value: "data:application/json," + url.QueryEscape(apicastConfig)},
+							},
+							LivenessProbe:  newProbe("/status/live", 8090, 10, 5, 10),
+							ReadinessProbe: newProbe("/status/ready", 8090, 15, 5, 30),
 						},
-						Env: []v1.EnvVar{
-							{Name: "APICAST_LOG_LEVEL", Value: "debug"},
-							{Name: "THREESCALE_CONFIG_FILE", Value: "/tmp/load.json"},
-							{Name: "APICAST_CONFIGURATION", Value: "data:application/json," + url.QueryEscape(apicastConfig)},
-						},
-					}},
+					},
 				},
 			},
 		},
 	}
-
 	addOwnerRefToObject(deploymentConfig, asOwner(api))
 	return deploymentConfig
-
 }
 
 // Service returns a k8s service object for APIcast
@@ -207,4 +209,18 @@ func asOwner(api *v1alpha1.API) metav1.OwnerReference {
 
 func apicastName(api *v1alpha1.API) string {
 	return "apicast-" + api.Name
+}
+
+func newProbe(path string, port int32, initDelay int32, timeout int32, period int32) *v1.Probe {
+	return &v1.Probe{
+		Handler: v1.Handler{
+			HTTPGet: &v1.HTTPGetAction{
+				Path: path,
+				Port: intstr.IntOrString{IntVal: port},
+			},
+		},
+		InitialDelaySeconds: initDelay,
+		TimeoutSeconds:      timeout,
+		PeriodSeconds:       period,
+	}
 }
