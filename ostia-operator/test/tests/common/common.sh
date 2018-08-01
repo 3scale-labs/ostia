@@ -44,6 +44,12 @@ delete_project () {
   fi
 }
 
+# Returns a Pod name given labels to filter on
+# Expects three args: Key and value filter for Pod metadata labels, Pod namespace
+get_pod_name() {
+ oc get pod -o jsonpath='{.items[?(@.metadata.labels.'${1}'=="'${2}'")].metadata.name}' -n ${3}
+}
+
 # Give Pods two minutes to hit ready status before error
 # Expects three args: Key and value filter for Pod metadata labels, Pod namespace
 wait_for_pod_ready () {
@@ -67,9 +73,21 @@ wait_for_pod_ready () {
 # Expects two args: Endpoint to make HTTP request against, number of requests to make
 do_http_get() {
  for i in $(seq 1 ${2}); do
-   curl -k -s -o /dev/null -w "%{http_code}\n" ${1};
+   curl -k -s -o /dev/null -w "%{http_code}\n" ${1}
  done | uniq -c
 
+}
+
+# Functionally equal to do_http_get but calling will execute within an apicast Pod in provided namespace
+# This function should be used when needed to simulate different source ip for testing
+# Relies on setting the host header
+# Expects three args: Host to make HTTP request against, number of requests to make, namespace
+do_http_get_in_pod() {
+ echo "Here in pod wating to exec"
+ pod_to_exec=$(get_pod_name app apicast ${3})
+ echo "PN ${pod_to_exec}"
+ cmd="for i in {1..${2}}; do curl -k -s -o /dev/null -w '%{http_code}\n' http://localhost:8080 -H 'HOST: ${1}'; done | uniq -c"
+ oc exec -n ${3} ${pod_to_exec} -- bash -c "${cmd}"
 }
 
 # Returns a string containing calling test directory appended with a random string

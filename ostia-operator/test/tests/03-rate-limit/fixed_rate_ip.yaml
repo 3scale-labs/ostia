@@ -1,0 +1,9 @@
+apiVersion: "ostia.3scale.net/v1alpha1"
+kind: "API"
+metadata:
+  name: "endpoints"
+spec:
+  rate_limits:
+    - name: fixed
+      limit: 10/m
+      source: ip

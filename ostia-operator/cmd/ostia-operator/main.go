@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
+	"os"
 	"runtime"
 
 	stub "github.com/3scale/ostia/ostia-operator/pkg/stub"
 	sdk "github.com/operator-framework/operator-sdk/pkg/sdk"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
-
 	"github.com/sirupsen/logrus"
-	"os"
 )
 
 func printVersion() {
