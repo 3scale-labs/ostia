@@ -20,9 +20,12 @@ func labelsForAPIcast(name string) map[string]string {
 }
 
 // DeploymentConfig returns an openshift deploymentConfig object for APIcast
-func DeploymentConfig(api *v1alpha1.API) *openshiftv1.DeploymentConfig {
+func DeploymentConfig(api *v1alpha1.API) (*openshiftv1.DeploymentConfig, error) {
 	apicastLabels := labelsForAPIcast(api.Name)
-	apicastConfig := createConfig(api)
+	apicastConfig, err := createConfig(api)
+	if err != nil {
+		return nil, err
+	}
 	apicastName := apicastName(api)
 
 	deploymentConfig := &openshiftv1.DeploymentConfig{
@@ -73,7 +76,7 @@ func DeploymentConfig(api *v1alpha1.API) *openshiftv1.DeploymentConfig {
 		},
 	}
 	addOwnerRefToObject(deploymentConfig, asOwner(api))
-	return deploymentConfig
+	return deploymentConfig, nil
 }
 
 // Service returns a k8s service object for APIcast
@@ -146,15 +149,17 @@ func Route(api *v1alpha1.API) *routev1.Route {
 }
 
 //createConfig returns an APIcast Configuration Object
-func createConfig(api *v1alpha1.API) string {
-
+func createConfig(api *v1alpha1.API) (string, error) {
+	var config string
 	var apicastRules []PolicyChainRule
+	upstreamServices := make([]string, len(api.Spec.Endpoints))
 
 	for _, v := range api.Spec.Endpoints {
 		rule := PolicyChainRule{
 			Regex: v.Path,
 			URL:   v.Host,
 		}
+		upstreamServices = append(upstreamServices, v.Name)
 		apicastRules = append(apicastRules, rule)
 	}
 
@@ -165,31 +170,31 @@ func createConfig(api *v1alpha1.API) string {
 	}
 
 	apicastHosts = append(apicastHosts, apicastName(api))
+	upStreamPolicy := PolicyChain{"apicast.policy.upstream", PolicyChainConfiguration{Rules: &apicastRules}}
+	rateLimits, err := processRateLimitPolicies(api.Spec.RateLimits)
+	if err != nil {
+		return config, err
+	}
+	pc := []PolicyChain{upStreamPolicy, rateLimits}
 
 	apicastConfig := &Config{
 		Services: []Services{
 			{
 				Proxy: Proxy{
-					Hosts: apicastHosts,
-					PolicyChain: []PolicyChain{
-						{
-							Name: "apicast.policy.upstream",
-							Configuration: PolicyChainConfiguration{
-								Rules: apicastRules,
-							},
-						},
-					},
+					Hosts:       apicastHosts,
+					PolicyChain: pc,
 				},
 			},
 		},
 	}
-	config, err := json.Marshal(apicastConfig)
+	b, err := json.Marshal(apicastConfig)
+	config = string(b)
 
 	if err != nil {
 		log.Errorf("Failed to serialize object %v", err)
 	}
 
-	return string(config)
+	return string(config), nil
 }
 
 func addOwnerRefToObject(obj metav1.Object, ownerRef metav1.OwnerReference) {

@@ -25,9 +25,10 @@ type API struct {
 
 // APISpec Contains the Spec of the API object
 type APISpec struct {
-	Expose    bool       `json:"expose"` //TODO: Make expose readonly after creation
-	Hostname  string     `json:"hostname"`
-	Endpoints []Endpoint `json:"endpoints"`
+	Expose     bool        `json:"expose"` //TODO: Make expose readonly after creation
+	Hostname   string      `json:"hostname"`
+	Endpoints  []Endpoint  `json:"endpoints"`
+	RateLimits []RateLimit `json:"rate_limits,omitempty"`
 }
 
 // APIStatus Contains the Status of the API object
@@ -37,7 +38,19 @@ type APIStatus struct { //TODO: Make this struct not user editable
 
 // Endpoint is a struct used to define the different upstream services
 type Endpoint struct {
-	Name string `json:"name"` // Not really needed?
-	Host string `json:"host"`
-	Path string `json:"path"`
+	Name       string      `json:"name"` // Not really needed?
+	Host       string      `json:"host"`
+	Path       string      `json:"path"`
+	RateLimits []RateLimit `json:"rate_limits,omitempty"`
+}
+
+// RateLimit is a struct used to define different types of rate limiting rules
+type RateLimit struct {
+	Burst  *int   `json:"burst"`
+	Conn   *int   `json:"conn"`
+	Delay  *int   `json:"delay"`
+	Limit  string `json:"limit"`
+	Name   string `json:"name"`   //TODO - This needs to reference and endpoint name currently but this relationship will reverse.
+	Source string `json:"source"` // Source will allow user to limit based on jwt, source ip etc
+	Type   string `json:"type"`
 }
