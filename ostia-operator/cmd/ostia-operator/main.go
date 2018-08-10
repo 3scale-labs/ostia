@@ -27,7 +27,7 @@ func printInfo(namespace string) {
 }
 
 func main() {
-	namespace := os.Getenv("NAMESPACE")
+	namespace := os.Getenv("WATCH_NAMESPACE")
 	printVersion()
 	printInfo(namespace)
 	sdk.Watch("ostia.3scale.net/v1alpha1", "API", namespace, 5)

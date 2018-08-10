@@ -14,7 +14,17 @@ spec:
     spec:
       containers:
         - name: ostia-operator
-          image: quay.io/3scale/ostia-operator:v0.1
+          image: quay.io/3scale/ostia-operator:master
+          ports:
+          - containerPort: 60000
+            name: metrics
           command:
           - ostia-operator
           imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OPERATOR_NAME
+              value: "ostia-operator"

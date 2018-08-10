@@ -23,24 +23,17 @@ cd ostia
 oc create -f ostia-operator/deploy/crd.yaml
 ```
 
-* Add cluster-admin perms to the ostia default user: (needs fix)
+* Deploy the operator into the namespace where you wish to manage your API:
 
 ```
-oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:ostia:default
+oc new-project my-hello-api
+oc create -f ostia-operator/deploy/operator.yaml
 ```
 
-* Deploy the operator, you can create a new project for if:
+* Within the same namespace as the operator, deploy the example Custom Resource:
 
 ```
-oc new-project ostia
-oc create -f ostia-operator/deploy/operator.yml
-```
-
-* Deploy the example Custom Resource in any namespace:
-
-```
-oc new-project myhelloapi
-oc create -f ostia-operator/deploy/cr.yaml
+oc create -f ostia-operator/deploy/cr.yaml -n my-hello-api
 ```
 
 ## Build
