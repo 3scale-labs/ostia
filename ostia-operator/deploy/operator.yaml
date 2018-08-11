@@ -12,6 +12,7 @@ spec:
       labels:
         name: ostia-operator
     spec:
+      serviceAccountName: ostia-operator
       containers:
         - name: ostia-operator
           image: quay.io/3scale/ostia-operator:master
