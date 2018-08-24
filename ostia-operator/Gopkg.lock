@@ -14,6 +14,12 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/beorn7/perks"
+  packages = ["quantile"]
+  revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -126,6 +132,18 @@
   revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/howeyc/gopass"
+  packages = ["."]
+  revision = "bf9dde6d0d2c004a008c27aaee91170c786f6db8"
+
+[[projects]]
+  name = "github.com/imdario/mergo"
+  packages = ["."]
+  revision = "9f23e2d6bd2a77f959b2bf6acdbefd708a83a4a4"
+  version = "v0.3.6"
+
+[[projects]]
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
@@ -154,6 +172,12 @@
   revision = "8b799c424f57fa123fc63a99d6383bc6e4c02578"
 
 [[projects]]
+  name = "github.com/matttproud/golang_protobuf_extensions"
+  packages = ["pbutil"]
+  revision = "c12348ce28de40eed0136aa2b644d0ee0650e56c"
+  version = "v1.0.1"
+
+[[projects]]
   name = "github.com/modern-go/concurrent"
   packages = ["."]
   revision = "bacd9c7ef1dd9b15be4a9909b8ac7a4e313eec94"
@@ -178,21 +202,18 @@
   packages = [
     "commands/operator-sdk",
     "commands/operator-sdk/cmd",
+    "commands/operator-sdk/cmd/cmdutil",
+    "commands/operator-sdk/cmd/completion",
     "commands/operator-sdk/cmd/generate",
+    "commands/operator-sdk/cmd/up",
     "commands/operator-sdk/error",
     "pkg/generator",
     "pkg/k8sclient",
     "pkg/sdk",
-    "pkg/sdk/action",
-    "pkg/sdk/handler",
-    "pkg/sdk/informer",
-    "pkg/sdk/query",
-    "pkg/sdk/types",
     "pkg/util/k8sutil",
     "version"
   ]
-  revision = "31577c9d90b99b63043d2014de8fb2dd855aee78"
-  version = "v0.0.5"
+  revision = "2653bb5df7c7926b9fbbcd6a3b3c231db839170b"
 
 [[projects]]
   branch = "master"
@@ -205,6 +226,42 @@
   packages = ["."]
   revision = "5f041e8faa004a95c88a202771f4cc3e991971e6"
   version = "v2.0.1"
+
+[[projects]]
+  name = "github.com/prometheus/client_golang"
+  packages = [
+    "prometheus",
+    "prometheus/promhttp"
+  ]
+  revision = "c5b7fccd204277076155f10851dad72b76a49317"
+  version = "v0.8.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/prometheus/client_model"
+  packages = ["go"]
+  revision = "5c3871d89910bfb32f5fcab2aa4b9ec68e65a99f"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/prometheus/common"
+  packages = [
+    "expfmt",
+    "internal/bitbucket.org/ww/goautoneg",
+    "model"
+  ]
+  revision = "c7de2306084e37d54b8be01f3541a8464345e9a5"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/prometheus/procfs"
+  packages = [
+    ".",
+    "internal/util",
+    "nfs",
+    "xfs"
+  ]
+  revision = "05ee40e3a273f7245e8777337fc7b46e533a9a92"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -405,8 +462,12 @@
     "pkg/version",
     "rest",
     "rest/watch",
+    "tools/auth",
     "tools/cache",
+    "tools/clientcmd",
     "tools/clientcmd/api",
+    "tools/clientcmd/api/latest",
+    "tools/clientcmd/api/v1",
     "tools/metrics",
     "tools/pager",
     "tools/reference",
@@ -414,6 +475,7 @@
     "util/buffer",
     "util/cert",
     "util/flowcontrol",
+    "util/homedir",
     "util/integer",
     "util/workqueue"
   ]
@@ -429,6 +491,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "664f8696304f0dfded9677d6487f3f6f7e0c429278fdd99112c00820df7413e1"
+  inputs-digest = "3eedf7272ab809771ad36134c37dceb312c1f82acb96ff4e971e5f2920012b28"
   solver-name = "gps-cdcl"
   solver-version = 1
