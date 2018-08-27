@@ -18,7 +18,7 @@ required = [
   name = "github.com/operator-framework/operator-sdk"
   # The version rule is used for a specific release and the master branch for in between releases.
   # branch = "master"
-  version = "=v0.0.5"
+  revision = "2653bb5df7c7926b9fbbcd6a3b3c231db839170b"
 
 [[constraint]]
   name = "github.com/openshift/api"

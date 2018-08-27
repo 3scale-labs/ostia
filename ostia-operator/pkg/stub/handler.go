@@ -1,16 +1,17 @@
 package stub
 
 import (
+	"context"
+	"os"
+
 	"github.com/3scale/ostia/ostia-operator/pkg/apicast"
 	"github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
-	"github.com/operator-framework/operator-sdk/pkg/sdk/handler"
-	"github.com/operator-framework/operator-sdk/pkg/sdk/types"
+	"github.com/operator-framework/operator-sdk/pkg/sdk"
 	log "github.com/sirupsen/logrus"
-	"os"
 )
 
 // NewHandler returns a Handler
-func NewHandler() handler.Handler {
+func NewHandler() sdk.Handler {
 	return &Handler{}
 }
 
@@ -32,7 +33,7 @@ func init() {
 }
 
 // Handle takes care of handling the events
-func (h *Handler) Handle(ctx types.Context, event types.Event) error {
+func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
 	switch o := event.Object.(type) {
 	case *v1alpha1.API:
 
