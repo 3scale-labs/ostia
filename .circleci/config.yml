@@ -2,19 +2,20 @@ version: 2
 jobs:
   build:
     docker:
-      # CircleCI Go images available at: https://hub.docker.com/r/circleci/golang/
       - image: circleci/golang:1.10
-
     working_directory: /go/src/github.com/3scale/ostia
-
     steps:
+
+      - setup_remote_docker:
+          reusable: true
+          exclusive: false
+
       - checkout
 
       - restore_cache:
           keys:
             - v1-gopkg-cache-{{ arch }}-{{ checksum "ostia-operator/Gopkg.lock" }}
             - v1-gopkg-cache-{{ arch }}-{{ .Branch }}
-
       - run:
           name: Install dependencies
           working_directory: ostia-operator
@@ -29,12 +30,86 @@ jobs:
           paths:
             - "/go/pkg"
 
-      - setup_remote_docker:
-          reusable: true
-          exclusive: false
-
       - run:
           name: Build ostia-operator
           working_directory: ostia-operator
           command: |
-              make build
+              make build NAMESPACE=172.30.1.1:5000/openshift VERSION=test
+
+      - run:
+          name: Sharing requirements to downstream job
+          command: |
+            mkdir -p /tmp/ostia-reqs/image /tmp/ostia-reqs/deploy /tmp/ostia-reqs/test
+            docker save -o /tmp/ostia-reqs/image/image.tar 172.30.1.1:5000/openshift/ostia-operator:test
+            cp -r ostia-operator/deploy/ /tmp/ostia-reqs/
+            cp -r ostia-operator/test/ /tmp/ostia-reqs/
+            cp ostia-operator/Makefile /tmp/ostia-reqs/Makefile
+
+      - persist_to_workspace:
+          root: /tmp/ostia-reqs
+          paths:
+            - Makefile
+            - deploy
+            - image
+            - test
+
+  test:
+    machine: true
+    working_directory: /tmp
+    steps:
+
+      - attach_workspace:
+          at: /tmp/ostia-reqs
+
+      - run:
+          name: Install OpenShift Client Tools
+          command: |
+            wget https://github.com/openshift/origin/releases/download/v3.9.0/openshift-origin-client-tools-v3.9.0-191fece-linux-64bit.tar.gz
+            tar xzf /tmp/openshift*.tar.gz && sudo mv /tmp/openshift-origin-client-tools-v3.9.0-191fece-linux-64bit/oc /usr/local/bin/
+
+      - run:
+          name: Configure Docker
+          command: |
+            echo '{"insecure-registries": ["172.30.0.0/16"]}' | sudo tee --append /etc/docker/daemon.json
+            sudo service docker restart
+
+      - run:
+          name: Start and Configure OpenShift Cluster
+          working_directory: /tmp/ostia-reqs/test
+          command: |
+            echo "export OPENSHIFT_IP=$(ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')" >> $BASH_ENV
+            source $BASH_ENV
+            oc cluster up --public-hostname=${OPENSHIFT_IP:=127.0.0.1}
+            oc login -u system:admin --insecure-skip-tls-verify=true > /dev/null
+            oc adm policy add-cluster-role-to-user cluster-admin developer > /dev/null
+            oc login -u developer --insecure-skip-tls-verify=true > /dev/null
+
+      - run:
+          name: Unpack and push ostia-operator to internal registry
+          working_directory: /tmp/ostia-reqs/image
+          command: |
+            docker load -i image.tar
+            source /tmp/ostia-reqs/test/tests/common/common.sh; wait_for_pod_ready deploymentconfig docker-registry default
+            docker login -u developer -p $(oc whoami -t) 172.30.1.1:5000
+            docker push 172.30.1.1:5000/openshift/ostia-operator:test
+
+      - run:
+          name: Patch Operator definition
+          working_directory: /tmp/ostia-reqs/deploy
+          command: sed -i -e 's/Always/IfNotPresent/g' operator.yaml
+
+      - run:
+          name: Run integration tests
+          working_directory: /tmp/ostia-reqs/
+          command: |
+            make integration OPENSHIFT_PUBLIC_HOSTNAME=${OPENSHIFT_IP}.nip.io
+
+
+workflows:
+  version: 2
+  build_and_test_integration:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
