@@ -17,16 +17,18 @@ git clone https://github.com/3scale/ostia.git
 cd ostia
 ```
 
-* Create the required objects, first the Custom Resource Definition:
+* At the cluster scope, create the Custom Resource Definition (requires `cluster-admin` role):
 
 ```
+oc login -u system:admin
 oc create -f ostia-operator/deploy/crd.yaml
 ```
 
-* Deploy the operator into the namespace where you wish to manage your API:
+* Create the RBAC (requires `cluster-admin` role). Deploy the operator into the namespace where you wish to manage your API:
 
 ```
 oc new-project my-hello-api
+oc create -f ostia-operator/deploy/rbac.yaml
 oc create -f ostia-operator/deploy/operator.yaml
 ```
 
@@ -94,3 +96,19 @@ make build
 ```
 make push
 ```
+
+## Testing
+
+The `ostia-operator` project is configured to use [circleci](https://circleci.com) and there are a number of integration tests
+which will run when a pull request is triggered against this repository.
+
+Tests can be run locally but expect a running an accessible OpenShift cluster with an `nip.io` hostname.
+Tests must be run by a user with an `admin` or `cluster-admin` role.
+
+Run integration tests via `make integration` which accepts an optional argument:
+1. `OPENSHIFT_PUBLIC_HOSTNAME`. The public hostname for OpenShift cluster. Default `127.0.0.1`
+
+At the start pf each test run, existing tests projects are marked for deletion. This can also be done manually by
+running `make clean_integration`.
+
+The same tests are run against the `circleci` build server but because of the executor type required, cannot be executed locally via `circleci build`.
