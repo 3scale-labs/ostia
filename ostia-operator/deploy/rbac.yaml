@@ -31,22 +31,13 @@ rules:
   - "*"
 ---
 
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: ostia-operator
-  labels:
-    name: ostia-operator
-
----
-
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: ostia-account-ostia-operator
 subjects:
 - kind: ServiceAccount
-  name: ostia-operator
+  name: default
 roleRef:
   kind: Role
   name: ostia-operator

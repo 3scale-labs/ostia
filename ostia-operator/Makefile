@@ -19,3 +19,12 @@ bash:
 
 push:
 	docker push $(IMAGE)
+
+integration: clean_integration
+	cd test && ./integration.sh ${OPENSHIFT_PUBLIC_HOSTNAME}
+
+clean_integration: SHELL:=/bin/bash
+clean_integration:
+	if [[ $$(oc get projects -o custom-columns=:.metadata.name -l ostia-test=true --no-headers=true) != "" ]]; then \
+	  oc delete project $$(oc get projects -o custom-columns=:.metadata.name -l ostia-test=true --no-headers=true); \
+	fi
