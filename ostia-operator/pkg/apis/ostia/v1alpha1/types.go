@@ -52,4 +52,5 @@ type RateLimit struct {
 	Limit  string `json:"limit"`
 	Name   string `json:"name"`   //TODO - This needs to reference and endpoint name currently but this relationship will reverse.
 	Source string `json:"source"` // Source will allow user to limit based on jwt, source ip etc
+	Type   string `json:"type"`
 }

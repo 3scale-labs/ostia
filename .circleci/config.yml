@@ -37,6 +37,12 @@ jobs:
               make build NAMESPACE=172.30.1.1:5000/openshift VERSION=test
 
       - run:
+          name: Run unit tests
+          working_directory: ostia-operator
+          command: |
+              make unit
+
+      - run:
           name: Sharing requirements to downstream job
           command: |
             mkdir -p /tmp/ostia-reqs/image /tmp/ostia-reqs/deploy /tmp/ostia-reqs/test

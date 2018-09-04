@@ -17,7 +17,8 @@ objects:
       host: ${UPSTREAM_HOST}
       path: /
     rate_limits:
-    - name: fixed
+    - type: FixedWindow
+      name: fixed
       limit: 10/m
 parameters:
 - description: The route hostname to expose this endpoint

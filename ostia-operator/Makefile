@@ -11,14 +11,16 @@ generate:
 build:
 	@operator-sdk build $(IMAGE)
 
-test: build
-	@docker run -t $(IMAGE) ostia-operator
+test: unit integration
 
 bash:
 	docker run -it $(IMAGE) bash
 
 push:
 	docker push $(IMAGE)
+
+unit:
+	go test ./...
 
 integration: clean_integration
 	cd test && ./integration.sh ${OPENSHIFT_PUBLIC_HOSTNAME}

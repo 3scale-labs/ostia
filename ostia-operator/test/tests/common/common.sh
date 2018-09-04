@@ -78,16 +78,20 @@ do_http_get() {
 
 }
 
+# Executes a provided command within a specific Pod
+# Expects three args: Command to run, Pod name, Pod namespace
+run_cmd_in_pod() {
+  oc exec -n ${3} ${2} -- bash -c "${1}"
+}
+
 # Functionally equal to do_http_get but calling will execute within an apicast Pod in provided namespace
 # This function should be used when needed to simulate different source ip for testing
 # Relies on setting the host header
 # Expects three args: Host to make HTTP request against, number of requests to make, namespace
 do_http_get_in_pod() {
- echo "Here in pod wating to exec"
  pod_to_exec=$(get_pod_name app apicast ${3})
- echo "PN ${pod_to_exec}"
  cmd="for i in {1..${2}}; do curl -k -s -o /dev/null -w '%{http_code}\n' http://localhost:8080 -H 'HOST: ${1}'; done | uniq -c"
- oc exec -n ${3} ${pod_to_exec} -- bash -c "${cmd}"
+ run_cmd_in_pod "${cmd}" ${pod_to_exec} ${3}
 }
 
 # Returns a string containing calling test directory appended with a random string

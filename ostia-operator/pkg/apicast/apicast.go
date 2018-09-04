@@ -2,11 +2,7 @@ package apicast
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/url"
-	"strconv"
-	"strings"
 
 	"github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
 	openshiftv1 "github.com/openshift/api/apps/v1"
@@ -24,9 +20,12 @@ func labelsForAPIcast(name string) map[string]string {
 }
 
 // DeploymentConfig returns an openshift deploymentConfig object for APIcast
-func DeploymentConfig(api *v1alpha1.API) *openshiftv1.DeploymentConfig {
+func DeploymentConfig(api *v1alpha1.API) (*openshiftv1.DeploymentConfig, error) {
 	apicastLabels := labelsForAPIcast(api.Name)
-	apicastConfig := createConfig(api)
+	apicastConfig, err := createConfig(api)
+	if err != nil {
+		return nil, err
+	}
 	apicastName := apicastName(api)
 
 	deploymentConfig := &openshiftv1.DeploymentConfig{
@@ -77,7 +76,7 @@ func DeploymentConfig(api *v1alpha1.API) *openshiftv1.DeploymentConfig {
 		},
 	}
 	addOwnerRefToObject(deploymentConfig, asOwner(api))
-	return deploymentConfig
+	return deploymentConfig, nil
 }
 
 // Service returns a k8s service object for APIcast
@@ -150,8 +149,8 @@ func Route(api *v1alpha1.API) *routev1.Route {
 }
 
 //createConfig returns an APIcast Configuration Object
-func createConfig(api *v1alpha1.API) string {
-
+func createConfig(api *v1alpha1.API) (string, error) {
+	var config string
 	var apicastRules []PolicyChainRule
 	upstreamServices := make([]string, len(api.Spec.Endpoints))
 
@@ -172,7 +171,11 @@ func createConfig(api *v1alpha1.API) string {
 
 	apicastHosts = append(apicastHosts, apicastName(api))
 	upStreamPolicy := PolicyChain{"apicast.policy.upstream", PolicyChainConfiguration{Rules: &apicastRules}}
-	pc := []PolicyChain{upStreamPolicy, processRateLimitPolicies(api.Spec.RateLimits)}
+	rateLimits, err := processRateLimitPolicies(api.Spec.RateLimits)
+	if err != nil {
+		return config, err
+	}
+	pc := []PolicyChain{upStreamPolicy, rateLimits}
 
 	apicastConfig := &Config{
 		Services: []Services{
@@ -184,13 +187,14 @@ func createConfig(api *v1alpha1.API) string {
 			},
 		},
 	}
-	config, err := json.Marshal(apicastConfig)
+	b, err := json.Marshal(apicastConfig)
+	config = string(b)
 
 	if err != nil {
 		log.Errorf("Failed to serialize object %v", err)
 	}
 
-	return string(config)
+	return string(config), nil
 }
 
 func addOwnerRefToObject(obj metav1.Object, ownerRef metav1.OwnerReference) {
@@ -223,148 +227,5 @@ func newProbe(path string, port int32, initDelay int32, timeout int32, period in
 		InitialDelaySeconds: initDelay,
 		TimeoutSeconds:      timeout,
 		PeriodSeconds:       period,
-	}
-}
-
-func processRateLimitPolicies(limits []v1alpha1.RateLimit) PolicyChain {
-	var fixedLimiters []FixedWindowRateLimiter
-	var leakyLimiters []LeakyBucketRateLimiter
-	var connLimiters []ConnectionRateLimiter
-
-	for _, limit := range limits {
-		rl, err := parseRateLimit(limit)
-		if err != nil {
-			log.Error(fmt.Sprintf("error processing rate limit rule for %s - %s", limit.Name, err.Error()))
-			continue
-		}
-
-		switch rl.(type) {
-		case FixedWindowRateLimiter:
-			fwRl := rl.(FixedWindowRateLimiter)
-			fixedLimiters = append(fixedLimiters, fwRl)
-		case LeakyBucketRateLimiter:
-			lbRl := rl.(LeakyBucketRateLimiter)
-			leakyLimiters = append(leakyLimiters, lbRl)
-		case ConnectionRateLimiter:
-			crRl := rl.(ConnectionRateLimiter)
-			connLimiters = append(connLimiters, crRl)
-		default:
-			log.Errorf("unknown rate limit type %T. ignoring", rl)
-			continue
-		}
-	}
-
-	var config PolicyChainConfiguration
-	if len(fixedLimiters) > 0 {
-		config.FixedWindowLimiters = &fixedLimiters
-	}
-	if len(leakyLimiters) > 0 {
-		config.LeakyBucketLimiters = &leakyLimiters
-	}
-	if len(connLimiters) > 0 {
-		config.ConnectionLimiters = &connLimiters
-	}
-
-	return PolicyChain{"apicast.policy.rate_limit", config}
-}
-
-func parseRateLimit(rl v1alpha1.RateLimit) (interface{}, error) {
-	key := LimiterKey{rl.Name, "plain", "service"}
-	if rl.Source != "" {
-		switch rl.Source {
-		//TODO - Add support for more sources here, jwt etc ..
-		case "ip":
-			key.Name = "{{remote_addr}}"
-		default:
-			log.Errorf("unknown source %s", rl.Source)
-		}
-		key.NameType = "liquid"
-	}
-	// limit is common to leaky bucket and fixed window algorithms
-	if rl.Limit == "" {
-		if err := verifyConnLimiterProps(rl); err != nil {
-			return nil, errors.New("error in connection limiter syntax -" + err.Error())
-		}
-		return makeConnLimiterRateLimiter(*rl.Conn, *rl.Burst, *rl.Delay, key), nil
-	}
-
-	multiplier := 1
-	parsedLimitVal := strings.Split(rl.Limit, "/")
-	parsedReqs, err := strconv.Atoi(parsedLimitVal[0])
-	if err != nil || parsedReqs < 0 {
-		return nil, errors.New("limit value must be a non-negative integer")
-	}
-
-	if len(parsedLimitVal) == 2 {
-		switch parsedLimitVal[1] {
-		case "s":
-			break
-		case "m":
-			multiplier = 60
-		case "hr":
-			multiplier = 60 * 60
-		default:
-			return nil, fmt.Errorf("unrecognised unit of time %s, defaulting to seconds", parsedLimitVal[1])
-		}
-	}
-
-	if rl.Burst == nil {
-		return makeFixedWindowRateLimiter(parsedReqs, multiplier, key), nil
-	}
-
-	if ok := verifyMinimumValue(*rl.Burst); !ok {
-		return nil, errors.New("burst must be non-negative")
-
-	}
-
-	if parsedReqs/multiplier < 0 {
-		return nil, errors.New("specified request rate (number per second) threshold must be non-negative")
-	}
-
-	return makeLeakyBucketRateLimiter(*rl.Burst, parsedReqs/multiplier, key), nil
-}
-
-func verifyConnLimiterProps(cl v1alpha1.RateLimit) error {
-	if cl.Burst == nil || verifyMinimumValue(*cl.Burst) {
-		return errors.New("burst must be set for connection limiter and have a minimum value of 0")
-	}
-	if cl.Conn == nil || verifyMinimumValue(*cl.Conn) {
-		return errors.New("conn must be set for connection limiter and have a minimum value of 0")
-	}
-	if cl.Delay == nil || verifyMinimumValue(*cl.Delay) {
-		return errors.New("delay must be set for connection limiter and have a minimum value of 0")
-	}
-	return nil
-}
-
-func verifyMinimumValue(val int) bool {
-	if val < 0 {
-		return false
-	}
-	return true
-}
-
-func makeConnLimiterRateLimiter(conn int, burst int, delay int, key LimiterKey) ConnectionRateLimiter {
-	return ConnectionRateLimiter{
-		Conn:  conn,
-		Burst: burst,
-		Delay: delay,
-		Key:   key,
-	}
-}
-
-func makeFixedWindowRateLimiter(count int, window int, key LimiterKey) FixedWindowRateLimiter {
-	return FixedWindowRateLimiter{
-		Count:  count,
-		Window: window,
-		Key:    key,
-	}
-}
-
-func makeLeakyBucketRateLimiter(burst int, rate int, key LimiterKey) LeakyBucketRateLimiter {
-	return LeakyBucketRateLimiter{
-		Burst: burst,
-		Rate:  rate,
-		Key:   key,
 	}
 }

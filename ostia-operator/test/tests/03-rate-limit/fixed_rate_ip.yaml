@@ -4,6 +4,7 @@ metadata:
   name: "endpoints"
 spec:
   rate_limits:
-    - name: fixed
+    - type: FixedWindow
+      name: fixed
       limit: 10/m
-      source: ip
+      source: "{{remote_addr}}"

@@ -38,8 +38,12 @@ func Reconcile(api *v1alpha1.API) (err error) {
 
 func reconcileDeploymentConfig(api *v1alpha1.API) (err error) {
 
-	existingDc := DeploymentConfig(api)
-	desiredDc := DeploymentConfig(api)
+	existingDc, _ := DeploymentConfig(api)
+	desiredDc, err := DeploymentConfig(api)
+	if err != nil {
+		log.Errorf(err.Error())
+		return err
+	}
 
 	err = sdk.Get(existingDc)
 	if err != nil {
