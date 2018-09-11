@@ -46,11 +46,39 @@ type Endpoint struct {
 
 // RateLimit is a struct used to define different types of rate limiting rules
 type RateLimit struct {
-	Burst  *int   `json:"burst"`
-	Conn   *int   `json:"conn"`
-	Delay  *int   `json:"delay"`
-	Limit  string `json:"limit"`
-	Name   string `json:"name"`   //TODO - This needs to reference and endpoint name currently but this relationship will reverse.
-	Source string `json:"source"` // Source will allow user to limit based on jwt, source ip etc
-	Type   string `json:"type"`
+	Burst      *int       `json:"burst"`
+	Conn       *int       `json:"conn"`
+	Delay      *int       `json:"delay"`
+	Limit      string     `json:"limit"`
+	Name       string     `json:"name"`   //TODO - This needs to reference and endpoint name currently but this relationship will reverse.
+	Source     string     `json:"source"` // Source will allow user to limit based on jwt, source ip etc
+	Type       string     `json:"type"`
+	Conditions *Condition `json:"conditions, omitempty"`
+}
+
+// Condition wraps a generic rate limit condition
+type Condition struct {
+	Operator   string               `json:"operator,omitempty"`
+	Operations []RateLimitCondition `json:"operations"`
+}
+
+// RateLimitCondition is an interface for a type which should marshal to apicast config
+type RateLimitCondition interface {
+	MarshalJSON() ([]byte, error)
+}
+
+type headerBasedCondition struct {
+	Header    string `json:"header"`
+	Operation string `json:"op, omitempty"`
+	Value     string `json:"value"`
+}
+
+type methodBasedCondition struct {
+	Method    string `json:"http_method"`
+	Operation string `json:"op, omitempty"`
+}
+
+type pathBasedCondition struct {
+	Path      string `json:"request_path,omitempty"`
+	Operation string `json:"op, omitempty"`
 }
