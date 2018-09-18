@@ -171,11 +171,15 @@ func createConfig(api *v1alpha1.API) (string, error) {
 
 	apicastHosts = append(apicastHosts, apicastName(api))
 	upStreamPolicy := PolicyChain{"apicast.policy.upstream", PolicyChainConfiguration{Rules: &apicastRules}}
-	rateLimits, err := processRateLimitPolicies(api.Spec.RateLimits)
-	if err != nil {
-		return config, err
+	pc := []PolicyChain{upStreamPolicy}
+
+	if len(api.Spec.RateLimits) > 0 {
+		rateLimits, err := processRateLimitPolicies(api.Spec.RateLimits)
+		if err != nil {
+			return config, err
+		}
+		pc = append(pc, rateLimits)
 	}
-	pc := []PolicyChain{upStreamPolicy, rateLimits}
 
 	apicastConfig := &Config{
 		Services: []Services{

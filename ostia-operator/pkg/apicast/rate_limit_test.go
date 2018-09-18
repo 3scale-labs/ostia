@@ -17,7 +17,7 @@ func TestProcessRateLimits(t *testing.T) {
 		var rl v1alpha1.RateLimit
 		err := json.Unmarshal(rlCrd, &rl)
 		if err != nil {
-			t.Errorf("error unmarshalling rate limit crd snippet to RateLimit struct")
+			t.Fatalf("error unmarshalling rate limit crd snippet to RateLimit struct - %s", err)
 		}
 		return processRateLimitPolicies([]v1alpha1.RateLimit{rl})
 	}
@@ -25,7 +25,7 @@ func TestProcessRateLimits(t *testing.T) {
 	apiCastConfigFromPolicy := func(pc PolicyChain) []byte {
 		conf, err := json.Marshal(pc)
 		if err != nil {
-			t.Errorf("error unmarshalling apicast config")
+			t.Fatalf("error unmarshalling apicast config")
 		}
 		return conf
 	}

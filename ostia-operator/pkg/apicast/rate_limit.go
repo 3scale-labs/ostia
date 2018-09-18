@@ -65,10 +65,12 @@ func toFixedWindow(rl v1alpha1.RateLimit) (FixedWindowRateLimiter, error) {
 	}
 
 	fw := FixedWindowRateLimiter{
-		Count:  count,
-		Key:    parseLimiterKey(rl),
-		Window: window,
+		Condition: rl.Conditions,
+		Count:     count,
+		Key:       parseLimiterKey(rl),
+		Window:    window,
 	}
+
 	return fw, nil
 }
 
@@ -86,7 +88,7 @@ func toLeakyBucket(rl v1alpha1.RateLimit) (LeakyBucketRateLimiter, error) {
 		burst = *rl.Burst
 	}
 
-	return LeakyBucketRateLimiter{burst, parseLimiterKey(rl), rate / seconds}, nil
+	return LeakyBucketRateLimiter{burst, rl.Conditions, parseLimiterKey(rl), rate / seconds}, nil
 }
 
 func toConnectionBased(rl v1alpha1.RateLimit) (ConnectionRateLimiter, error) {
@@ -109,7 +111,7 @@ func toConnectionBased(rl v1alpha1.RateLimit) (ConnectionRateLimiter, error) {
 		delay = *rl.Delay
 	}
 
-	return ConnectionRateLimiter{burst, conn, delay, parseLimiterKey(rl)}, nil
+	return ConnectionRateLimiter{burst, rl.Conditions, conn, delay, parseLimiterKey(rl)}, nil
 }
 
 func parseTimeLimits(rl v1alpha1.RateLimit) (int, int, error) {
@@ -120,7 +122,7 @@ func parseTimeLimits(rl v1alpha1.RateLimit) (int, int, error) {
 	seconds = 1
 	parsedLimitVal := strings.Split(rl.Limit, "/")
 	requests, err := strconv.Atoi(parsedLimitVal[0])
-	if err != nil || requests < 0 {
+	if err != nil || requests < 1 {
 		return requests, seconds, fmt.Errorf("'limit' value  for %s must be a non-negative integer", rl.Limit)
 	}
 

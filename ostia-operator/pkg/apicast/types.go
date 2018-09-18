@@ -1,8 +1,10 @@
 package apicast
 
+import "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
+
 const (
 	apicastImage   = "quay.io/3scale/apicast"
-	apicastVersion = "master"
+	apicastVersion = "3.3-stable"
 )
 
 // Config is the configuration for APIcast
@@ -47,9 +49,10 @@ type PolicyChainRule struct {
 // Based on a fixed window of time (last X seconds).
 // Can make up to Count requests per Window seconds.
 type FixedWindowRateLimiter struct {
-	Count  int        `json:"count"`
-	Key    LimiterKey `json:"key"`
-	Window int        `json:"window"`
+	Condition *v1alpha1.Condition `json:"condition,omitempty"`
+	Count     int                 `json:"count"`
+	Key       LimiterKey          `json:"key"`
+	Window    int                 `json:"window"`
 }
 
 //LeakyBucketRateLimiter defines a leaky bucket rate limiting rule
@@ -58,9 +61,10 @@ type FixedWindowRateLimiter struct {
 // It allows exceeding that number by Burst requests per second
 // An artificial delay is introduced for those requests between rate and burst to avoid going over the limits.
 type LeakyBucketRateLimiter struct {
-	Burst int        `json:"burst"`
-	Key   LimiterKey `json:"key"`
-	Rate  int        `json:"rate"`
+	Burst     int                 `json:"burst"`
+	Condition *v1alpha1.Condition `json:"condition,omitempty"`
+	Key       LimiterKey          `json:"key"`
+	Rate      int                 `json:"rate"`
 }
 
 //ConnectionRateLimiter defines a connection rate, rate limiting rule
@@ -69,10 +73,11 @@ type LeakyBucketRateLimiter struct {
 // It allows exceeding that number by Burst connections per second.
 // Delay is the number of seconds to delay the connections that exceed the limit.
 type ConnectionRateLimiter struct {
-	Burst int        `json:"burst"`
-	Conn  int        `json:"conn"`
-	Delay int        `json:"delay"`
-	Key   LimiterKey `json:"key"`
+	Burst     int                 `json:"burst"`
+	Condition *v1alpha1.Condition `json:"condition,omitempty"`
+	Conn      int                 `json:"conn"`
+	Delay     int                 `json:"delay"`
+	Key       LimiterKey          `json:"key"`
 }
 
 //LimiterKey defines a structure for rate limiting rules - name must be unique within scope
@@ -80,4 +85,10 @@ type LimiterKey struct {
 	Name     string `json:"name"`
 	NameType string `json:"name_type"`
 	Scope    string `json:"scope"`
+}
+
+//LimiterCondition holds a set of conditions on which a limit will be applied
+// assuming that the operations encapsulated by the condition holds true
+type LimiterCondition struct {
+	Operations v1alpha1.Condition `json:"operations,omitempty"`
 }

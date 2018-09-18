@@ -71,9 +71,20 @@ wait_for_pod_ready () {
 
 # Prints to stdout the number of each unique status codes
 # Expects two args: Endpoint to make HTTP request against, number of requests to make
+# Optional third arg: Header as string
 do_http_get() {
  for i in $(seq 1 ${2}); do
-   curl -k -s -o /dev/null -w "%{http_code}\n" ${1}
+   curl -k -s -o /dev/null -w "%{http_code}\n" -H "${3}" --url ${1}
+ done | uniq -c
+
+}
+
+# Prints to stdout the number of each unique status codes
+# Expects two args: Endpoint to make HTTP request against, number of requests to make
+# Optional third arg: Header as string
+do_http_post() {
+ for i in $(seq 1 ${2}); do
+   curl -k -s -o /dev/null -w "%{http_code}\n" -X POST -H "${3}" --url ${1}
  done | uniq -c
 
 }
