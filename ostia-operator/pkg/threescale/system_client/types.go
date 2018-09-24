@@ -6,8 +6,8 @@ import (
 	"net/url"
 )
 
-// Backend defines a 3scale backend service
-type Backend struct {
+// AdminPortal defines a 3scale adminPortal service
+type AdminPortal struct {
 	scheme  string
 	host    string
 	port    int
@@ -16,8 +16,8 @@ type Backend struct {
 
 // ThreeScaleClient interacts with 3scale Service Management API
 type ThreeScaleClient struct {
-	backend    *Backend
-	httpClient *http.Client
+	adminPortal *AdminPortal
+	httpClient  *http.Client
 }
 
 // ApplicationResp - API response for create limit endpoint
