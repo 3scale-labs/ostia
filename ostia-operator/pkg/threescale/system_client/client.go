@@ -20,7 +20,7 @@ const (
 	createAppPlanEndpoint = "/admin/api/services/%s/application_plans.xml"
 	createLimitEndpoint   = "/admin/api/application_plans/%s/metrics/%s/limits.xml"
 	mappingRuleEndpoint   = "/admin/api/services/%s/proxy/mapping_rules.xml"
-	createMetricEndpoint  = "/admin/api/services/%s/metrics.xml"
+	metricEndpoint        = "/admin/api/services/%s/metrics.xml"
 )
 
 var httpReqError = errors.New("error building http request")

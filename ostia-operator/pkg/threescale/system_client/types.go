@@ -78,15 +78,15 @@ type MappingRule struct {
 	UpdatedAt  string   `xml:"updated_at,omitempty"`
 }
 
+// MappingRuleList - Holds a list of MappingRule
 type MappingRuleList struct {
 	XMLName      xml.Name      `xml:"mapping_rules"`
-	Text         string        `xml:",chardata"`
 	MappingRules []MappingRule `xml:"mapping_rule"`
 }
 
-// MetricResp - API response for create metric endpoint
-type MetricResp struct {
-	Name         xml.Name `xml:",any"`
+// Metric - Defines the object returned via the API for creation of metric
+type Metric struct {
+	XMLName      xml.Name `xml:"metric"`
 	ID           string   `xml:"id"`
 	MetricName   string   `xml:"name"`
 	SystemName   string   `xml:"system_name"`
@@ -94,7 +94,12 @@ type MetricResp struct {
 	ServiceID    string   `xml:"service_id"`
 	Description  string   `xml:"description"`
 	Unit         string   `xml:"unit"`
-	Error        string   `xml:"error,omitempty"`
+}
+
+// MetricList - Holds a list of Metric
+type MetricList struct {
+	XMLName xml.Name `xml:"metrics"`
+	Metrics []Metric `xml:"metric"`
 }
 
 // PlanResp - API response for create application plan endpoint
