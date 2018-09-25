@@ -18,14 +18,15 @@ import (
 const (
 	createAppEndpoint           = "/admin/api/accounts/%s/applications.xml"
 	createAppPlanEndpoint       = "/admin/api/services/%s/application_plans.xml"
-	limitEndpoint               = "/admin/api/application_plans/%s/metrics/%s/limits.xml"
-	listLimitPerAppPlanEndpoint = "/admin/api/application_plans/%s/limits.xml"
-	listLimitPerMetricEndpoint  = "/admin/api/application_plans/%s/metrics/%s/limits.xml"
+	createLimitEndpoint         = "/admin/api/application_plans/%s/metrics/%s/limits.xml"
 	mappingRuleEndpoint         = "/admin/api/services/%s/proxy/mapping_rules.xml"
 	metricEndpoint              = "/admin/api/services/%s/metrics.xml"
 	ListAppPlansByService       = "/admin/api/services/%s/application_plans.xml"
 	ListAppPlans                = "/admin/api/application_plans.xml"
-	DeleteAppPlanEndpoint       = "/admin/api/services/%s/application_plans/%s.xml"
+	AppPlanServiceEndpoint      = "/admin/api/services/%s/application_plans/%s.xml"
+ 	limitEndpoint               = "/admin/api/application_plans/%s/metrics/%s/limits.xml"
+	listLimitPerAppPlanEndpoint = "/admin/api/application_plans/%s/limits.xml"
+	listLimitPerMetricEndpoint  = "/admin/api/application_plans/%s/metrics/%s/limits.xml"
 )
 
 var httpReqError = errors.New("error building http request")
@@ -71,6 +72,15 @@ func (c *ThreeScaleClient) buildPostReq(ep string, body io.Reader) (*http.Reques
 func (c *ThreeScaleClient) buildDeleteReq(ep string, body io.Reader) (*http.Request, error) {
 	path := &url.URL{Path: ep}
 	req, err := http.NewRequest("DELETE", c.adminPortal.baseUrl.ResolveReference(path).String(), body)
+	req.Header.Set("Accept", "application/xml")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	return req, err
+}
+
+// Request builder for PUT request to the provided endpoint
+func (c *ThreeScaleClient) buildPutReq(ep string, body io.Reader) (*http.Request, error) {
+	path := &url.URL{Path: ep}
+	req, err := http.NewRequest("PUT", c.adminPortal.baseUrl.ResolveReference(path).String(), body)
 	req.Header.Set("Accept", "application/xml")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	return req, err

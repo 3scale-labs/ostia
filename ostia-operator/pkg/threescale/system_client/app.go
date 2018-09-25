@@ -131,9 +131,38 @@ func (c *ThreeScaleClient) ListAppPlan(accessToken string) (AppPlansList, error)
 	return appPlans, nil
 }
 
+func (c *ThreeScaleClient) UpdateAppPlan(accessToken string, svcId string, appPlanId string, name string, stateEvent string) (Plan, error) {
+	var apiResp Plan
+	ep := genAppPlanByServiceEp(svcId, appPlanId)
+
+	values := url.Values{}
+	values.Add("access_token", accessToken)
+	values.Add("service_id", svcId)
+	values.Add("name", name)
+	values.Add("state_event", stateEvent)
+
+	body := strings.NewReader(values.Encode())
+	req, err := c.buildPutReq(ep, body)
+	if err != nil {
+		return apiResp, httpReqError
+	}
+
+	resp, err := c.httpClient.Do(req)
+	defer resp.Body.Close()
+
+	if err != nil {
+		return apiResp, genRespErr("Update application plan", err.Error())
+	}
+
+	if err := xml.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+		return apiResp, genRespErr("Update application plan", err.Error())
+	}
+	return apiResp, nil
+}
+
 func (c *ThreeScaleClient) DeleteAppPlan(accessToken string, serviceId string, appPlanId string) error {
 	var apiResp ApplicationResp
-	ep := genDeleteAppPlanEp(serviceId, appPlanId)
+	ep := genAppPlanByServiceEp(serviceId, appPlanId)
 
 	values := url.Values{}
 	values.Add("access_token", accessToken)
@@ -157,8 +186,8 @@ func (c *ThreeScaleClient) DeleteAppPlan(accessToken string, serviceId string, a
 	return nil
 }
 
-func genDeleteAppPlanEp(serviceId, appPlanId string) string {
-	return fmt.Sprintf(DeleteAppPlanEndpoint, serviceId, appPlanId)
+func genAppPlanByServiceEp(serviceId, appPlanId string) string {
+	return fmt.Sprintf(AppPlanServiceEndpoint, serviceId, appPlanId)
 }
 
 func genAppEp(accountId string) string {
