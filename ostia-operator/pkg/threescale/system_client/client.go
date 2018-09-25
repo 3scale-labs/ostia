@@ -20,7 +20,8 @@ const (
 	createAppPlanEndpoint       = "/admin/api/services/%s/application_plans.xml"
 	createLimitEndpoint         = "/admin/api/application_plans/%s/metrics/%s/limits.xml"
 	mappingRuleEndpoint         = "/admin/api/services/%s/proxy/mapping_rules.xml"
-	metricEndpoint              = "/admin/api/services/%s/metrics.xml"
+	createListMetricEndpoint    = "/admin/api/services/%s/metrics.xml"
+	updateDeleteMetricEndpoint  = "/admin/api/services/%s/metrics/%s.xml"
 	ListAppPlansByService       = "/admin/api/services/%s/application_plans.xml"
 	ListAppPlans                = "/admin/api/application_plans.xml"
 	AppPlanServiceEndpoint      = "/admin/api/services/%s/application_plans/%s.xml"
@@ -42,13 +43,21 @@ func NewAdminPortal(scheme string, host string, port int) (*AdminPortal, error) 
 }
 
 // Creates a ThreeScaleClient to communicate with Account Management API.
-
 // If http Client is nil, the default http client will be used
 func NewThreeScale(backEnd *AdminPortal, httpClient *http.Client) *ThreeScaleClient {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
 	return &ThreeScaleClient{backEnd, httpClient}
+}
+
+func NewParams() Params {
+	params := make(map[string]string)
+	return params
+}
+
+func (p Params) AddParam(key string, value string) {
+	p[key] = value
 }
 
 // Request builder for GET request to the provided endpoint
@@ -63,6 +72,15 @@ func (c *ThreeScaleClient) buildGetReq(ep string) (*http.Request, error) {
 func (c *ThreeScaleClient) buildPostReq(ep string, body io.Reader) (*http.Request, error) {
 	path := &url.URL{Path: ep}
 	req, err := http.NewRequest("POST", c.adminPortal.baseUrl.ResolveReference(path).String(), body)
+	req.Header.Set("Accept", "application/xml")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	return req, err
+}
+
+// Request builder for PUT request to the provided endpoint
+func (c *ThreeScaleClient) buildUpdateReq(ep string, body io.Reader) (*http.Request, error) {
+	path := &url.URL{Path: ep}
+	req, err := http.NewRequest("PUT", c.adminPortal.baseUrl.ResolveReference(path).String(), body)
 	req.Header.Set("Accept", "application/xml")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	return req, err

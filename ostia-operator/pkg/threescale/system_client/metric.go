@@ -12,7 +12,7 @@ import (
 func (c *ThreeScaleClient) CreateMetric(accessToken string, svcId string, name string, unit string) (Metric, error) {
 	var m Metric
 
-	ep := genMetricEp(svcId)
+	ep := genMetricCreateListEp(svcId)
 
 	values := url.Values{}
 	values.Add("access_token", accessToken)
@@ -43,11 +43,76 @@ func (c *ThreeScaleClient) CreateMetric(accessToken string, svcId string, name s
 	return m, nil
 }
 
+// UpdateMetric - Updates the metric of a service. Valid params keys and their purpose are as follows:
+// "friendly_name" - Name of the metric.
+// "unit" - Measure unit of the metric.
+// "description" - Description of the metric.
+func (c *ThreeScaleClient) UpdateMetric(accessToken string, svcId string, id string, params Params) (Metric, error) {
+	var m Metric
+
+	ep := genMetricUpdateDeleteEp(svcId, id)
+
+	values := url.Values{}
+	values.Add("access_token", accessToken)
+	for k, v := range params {
+		values.Add(k, v)
+	}
+
+	body := strings.NewReader(values.Encode())
+	req, err := c.buildUpdateReq(ep, body)
+	if err != nil {
+		return m, httpReqError
+	}
+
+	resp, err := c.httpClient.Do(req)
+	defer resp.Body.Close()
+
+	if err != nil {
+		return m, genRespErr("update metric", err.Error())
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return m, genRespErr("update metric", handleErrResp(resp))
+	}
+
+	if err := xml.NewDecoder(resp.Body).Decode(&m); err != nil {
+		return m, genRespErr("update metric", err.Error())
+	}
+	return m, nil
+}
+
+// DeleteMetric - Deletes the metric of a service.
+// When a metric is deleted, the associated limits across application plans are removed
+func (c *ThreeScaleClient) DeleteMetric(accessToken string, svcId string, id string) error {
+	ep := genMetricUpdateDeleteEp(svcId, id)
+
+	values := url.Values{}
+	values.Add("access_token", accessToken)
+
+	body := strings.NewReader(values.Encode())
+	req, err := c.buildDeleteReq(ep, body)
+	if err != nil {
+		return httpReqError
+	}
+
+	resp, err := c.httpClient.Do(req)
+	defer resp.Body.Close()
+
+	if err != nil {
+		return genRespErr("delete metric", err.Error())
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return genRespErr("update metric", handleErrResp(resp))
+	}
+	return nil
+}
+
 // ListMetric - Returns the list of metrics of a service
 func (c *ThreeScaleClient) ListMetrics(accessToken string, svcId string) (MetricList, error) {
 	var ml MetricList
 
-	ep := genMetricEp(svcId)
+	ep := genMetricCreateListEp(svcId)
 
 	req, err := c.buildGetReq(ep)
 	if err != nil {
@@ -75,6 +140,10 @@ func (c *ThreeScaleClient) ListMetrics(accessToken string, svcId string) (Metric
 	return ml, nil
 }
 
-func genMetricEp(svcID string) string {
-	return fmt.Sprintf(metricEndpoint, svcID)
+func genMetricCreateListEp(svcID string) string {
+	return fmt.Sprintf(createListMetricEndpoint, svcID)
+}
+
+func genMetricUpdateDeleteEp(svcID string, metricId string) string {
+	return fmt.Sprintf(updateDeleteMetricEndpoint, svcID, metricId)
 }
