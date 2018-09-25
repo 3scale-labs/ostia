@@ -66,9 +66,9 @@ type LimitResp struct {
 	Error    string   `xml:"error,omitempty"`
 }
 
-// MappingRuleResp - API response for create mapping rule endpoint
-type MappingRuleResp struct {
-	Name       xml.Name `xml:",any"`
+// MappingRule - Defines the object returned via the API for creation of mapping rule
+type MappingRule struct {
+	XMLName    xml.Name `xml:"mapping_rule"`
 	ID         string   `xml:"id,omitempty"`
 	MetricID   string   `xml:"metric_id,omitempty"`
 	Pattern    string   `xml:"pattern,omitempty"`
@@ -76,7 +76,12 @@ type MappingRuleResp struct {
 	Delta      string   `xml:"delta,omitempty"`
 	CreatedAt  string   `xml:"created_at,omitempty"`
 	UpdatedAt  string   `xml:"updated_at,omitempty"`
-	Error      string   `xml:"error,omitempty"`
+}
+
+type MappingRuleList struct {
+	XMLName      xml.Name      `xml:"mapping_rules"`
+	Text         string        `xml:",chardata"`
+	MappingRules []MappingRule `xml:"mapping_rule"`
 }
 
 // MetricResp - API response for create metric endpoint
@@ -108,4 +113,12 @@ type PlanResp struct {
 	TrialPeriodDays    string   `xml:"trial_period_days"`
 	CancellationPeriod string   `xml:"cancellation_period"`
 	Error              string   `xml:"error,omitempty"`
+}
+
+type ErrorResp struct {
+	XMLName xml.Name `xml:"errors"`
+	Text    string   `xml:",chardata"`
+	Error   struct {
+		Text string `xml:",chardata"`
+	} `xml:"error"`
 }
