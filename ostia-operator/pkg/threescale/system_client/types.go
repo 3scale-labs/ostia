@@ -55,15 +55,20 @@ type ApplicationResp struct {
 	Error       string `xml:"error,omitempty"`
 }
 
-// LimitResp - API response for create limit endpoint
-type LimitResp struct {
-	Name     xml.Name `xml:",any"`
-	ID       string   `xml:"id, omitempty"`
-	MetricID string   `xml:"metric_id,omitempty"`
-	PlanID   string   `xml:"plan_id,omitempty"`
-	Period   string   `xml:"period,omitempty"`
-	Value    string   `xml:"value,omitempty"`
-	Error    string   `xml:"error,omitempty"`
+// Limit - Defines the object returned via the API for creation of a limit
+type Limit struct {
+	XMLName  xml.Name `xml:"limit"`
+	ID       string   `xml:"id"`
+	MetricID string   `xml:"metric_id"`
+	PlanID   string   `xml:"plan_id"`
+	Period   string   `xml:"period"`
+	Value    string   `xml:"value"`
+}
+
+// LimitList - Holds a list of Limit
+type LimitList struct {
+	XMLName xml.Name `xml:"limits"`
+	Limits  []Limit  `xml:"limit"`
 }
 
 // MappingRule - Defines the object returned via the API for creation of mapping rule
