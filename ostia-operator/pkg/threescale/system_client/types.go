@@ -102,8 +102,48 @@ type MetricList struct {
 	Metrics []Metric `xml:"metric"`
 }
 
-// PlanResp - API response for create application plan endpoint
-type PlanResp struct {
+type AppPlansList struct {
+	XMLName xml.Name `xml:"plans"`
+	Text    string   `xml:",chardata"`
+	Plan    []struct {
+	Text    string `xml:",chardata"`
+	Custom  string `xml:"custom,attr"`
+	Default string `xml:"default,attr"`
+	ID      struct {
+	Text string `xml:",chardata"`
+	} `xml:"id"`
+	Name struct {
+	Text string `xml:",chardata"`
+	} `xml:"name"`
+	Type struct {
+	Text string `xml:",chardata"`
+	} `xml:"type"`
+	State struct {
+	Text string `xml:",chardata"`
+	} `xml:"state"`
+	ServiceID struct {
+	Text string `xml:",chardata"`
+	} `xml:"service_id"`
+	EndUserRequired struct {
+	Text string `xml:",chardata"`
+	} `xml:"end_user_required"`
+	SetupFee struct {
+	Text string `xml:",chardata"`
+	} `xml:"setup_fee"`
+	CostPerMonth struct {
+	Text string `xml:",chardata"`
+	} `xml:"cost_per_month"`
+	TrialPeriodDays struct {
+	Text string `xml:",chardata"`
+	} `xml:"trial_period_days"`
+	CancellationPeriod struct {
+	Text string `xml:",chardata"`
+	} `xml:"cancellation_period"`
+	} `xml:"plan"`
+	}
+
+// Plan - API response for create application plan endpoint
+type Plan struct {
 	Name               xml.Name `xml:",any"`
 	Custom             string   `xml:"custom,attr"`
 	Default            string   `xml:"default,attr"`
