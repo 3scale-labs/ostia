@@ -71,36 +71,35 @@ func (c *ThreeScaleClient) CreateAppPlan(accessToken string, svcId string, name 
 }
 
 func (c *ThreeScaleClient) ListAppPlanByServiceId(accessToken string, svcId string) (AppPlansList, error) {
-		var appPlans AppPlansList
-		ep := genAppPlansByService(svcId)
+	var appPlans AppPlansList
+	ep := genAppPlansByService(svcId)
 
-		req, err := c.buildGetReq(ep)
-		if err != nil {
-			return appPlans, httpReqError
-		}
-
-		values := url.Values{}
-		values.Add("access_token", accessToken)
-		values.Add("service_id", svcId)
-
-		req.URL.RawQuery = values.Encode()
-		resp, err := c.httpClient.Do(req)
-		defer resp.Body.Close()
-
-		if err != nil {
-			return appPlans, genRespErr("List Application Plans By Service:", err.Error())
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			return appPlans, genRespErr("List Application Plans By Service:", handleErrResp(resp))
-		}
-
-		if err := xml.NewDecoder(resp.Body).Decode(&appPlans); err != nil {
-			return appPlans, genRespErr("List Application Plans By Service:", err.Error())
-		}
-		return appPlans, nil
+	req, err := c.buildGetReq(ep)
+	if err != nil {
+		return appPlans, httpReqError
 	}
 
+	values := url.Values{}
+	values.Add("access_token", accessToken)
+	values.Add("service_id", svcId)
+
+	req.URL.RawQuery = values.Encode()
+	resp, err := c.httpClient.Do(req)
+	defer resp.Body.Close()
+
+	if err != nil {
+		return appPlans, genRespErr("List Application Plans By Service:", err.Error())
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return appPlans, genRespErr("List Application Plans By Service:", handleErrResp(resp))
+	}
+
+	if err := xml.NewDecoder(resp.Body).Decode(&appPlans); err != nil {
+		return appPlans, genRespErr("List Application Plans By Service:", err.Error())
+	}
+	return appPlans, nil
+}
 
 func (c *ThreeScaleClient) ListAppPlan(accessToken string) (AppPlansList, error) {
 	var appPlans AppPlansList
@@ -132,6 +131,36 @@ func (c *ThreeScaleClient) ListAppPlan(accessToken string) (AppPlansList, error)
 	return appPlans, nil
 }
 
+func (c *ThreeScaleClient) DeleteAppPlan(accessToken string, serviceId string, appPlanId string) error {
+	var apiResp ApplicationResp
+	ep := genDeleteAppPlanEp(serviceId, appPlanId)
+
+	values := url.Values{}
+	values.Add("access_token", accessToken)
+
+	body := strings.NewReader(values.Encode())
+	req, err := c.buildDeleteReq(ep, body)
+	if err != nil {
+		return httpReqError
+	}
+
+	resp, err := c.httpClient.Do(req)
+	defer resp.Body.Close()
+
+	if err != nil {
+		return genRespErr("Delete App", err.Error())
+	}
+
+	if err := xml.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+		return genRespErr("Delete App", err.Error())
+	}
+	return nil
+}
+
+func genDeleteAppPlanEp(serviceId, appPlanId string) string {
+	return fmt.Sprintf(DeleteAppPlanEndpoint, serviceId, appPlanId)
+}
+
 func genAppEp(accountId string) string {
 	return fmt.Sprintf(createAppEndpoint, accountId)
 }
@@ -143,4 +172,3 @@ func genAppPlanEp(svcId string) string {
 func genAppPlansByService(svcId string) string {
 	return fmt.Sprintf(ListAppPlansByService, svcId)
 }
-
