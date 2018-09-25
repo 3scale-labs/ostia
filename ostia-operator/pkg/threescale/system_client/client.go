@@ -7,6 +7,7 @@ package client
 // TODO without being DRY'ed  if possible and hardened significantly
 
 import (
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -15,11 +16,11 @@ import (
 )
 
 const (
-	createAppEndpoint         = "/admin/api/accounts/%s/applications.xml"
-	createAppPlanEndpoint     = "/admin/api/services/%s/application_plans.xml"
-	createLimitEndpoint       = "/admin/api/application_plans/%s/metrics/%s/limits.xml"
-	createMappingRuleEndpoint = "/admin/api/services/%s/proxy/mapping_rules.xml"
-	createMetricEndpoint      = "/admin/api/services/%s/metrics.xml"
+	createAppEndpoint     = "/admin/api/accounts/%s/applications.xml"
+	createAppPlanEndpoint = "/admin/api/services/%s/application_plans.xml"
+	createLimitEndpoint   = "/admin/api/application_plans/%s/metrics/%s/limits.xml"
+	mappingRuleEndpoint   = "/admin/api/services/%s/proxy/mapping_rules.xml"
+	createMetricEndpoint  = "/admin/api/services/%s/metrics.xml"
 )
 
 var httpReqError = errors.New("error building http request")
@@ -45,6 +46,14 @@ func NewThreeScale(backEnd *AdminPortal, httpClient *http.Client) *ThreeScaleCli
 }
 
 // Request builder for GET request to the provided endpoint
+func (c *ThreeScaleClient) buildGetReq(ep string) (*http.Request, error) {
+	path := &url.URL{Path: ep}
+	req, err := http.NewRequest("GET", c.adminPortal.baseUrl.ResolveReference(path).String(), nil)
+	req.Header.Set("Accept", "application/xml")
+	return req, err
+}
+
+// Request builder for GET request to the provided endpoint
 func (c *ThreeScaleClient) buildPostReq(ep string, body io.Reader) (*http.Request, error) {
 	path := &url.URL{Path: ep}
 	req, err := http.NewRequest("POST", c.adminPortal.baseUrl.ResolveReference(path).String(), body)
@@ -63,6 +72,17 @@ func verifyUrl(urlToCheck string) (*url.URL, error) {
 
 	}
 	return url2, err
+}
+
+// Decodes and transforms an API response error into a string
+func handleErrResp(resp *http.Response) string {
+	var errResp ErrorResp
+	errMsg := fmt.Sprintf("status code: %v", resp.StatusCode)
+	err := xml.NewDecoder(resp.Body).Decode(&errResp)
+	if err == nil {
+		errMsg = fmt.Sprintf("%s - reason: %s", errMsg, errResp.Error.Text)
+	}
+	return errMsg
 }
 
 // Helper method to generate error message for client functions
