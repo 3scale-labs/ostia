@@ -152,3 +152,5 @@ type ErrorResp struct {
 		Text string `xml:",chardata"`
 	} `xml:"error"`
 }
+
+type Params map[string]string
