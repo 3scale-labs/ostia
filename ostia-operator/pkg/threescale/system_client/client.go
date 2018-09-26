@@ -18,9 +18,7 @@ import (
 const (
 	createAppEndpoint               = "/admin/api/accounts/%s/applications.xml"
 	createAppPlanEndpoint           = "/admin/api/services/%s/application_plans.xml"
-	createLimitEndpoint             = "/admin/api/application_plans/%s/metrics/%s/limits.xml"
 	mappingRuleEndpoint             = "/admin/api/services/%s/proxy/mapping_rules.xml"
-	updateDeleteMappingRuleEndpoint = "/admin/api/services/%s/proxy/mapping_rules/%s.xml"
 	createListMetricEndpoint        = "/admin/api/services/%s/metrics.xml"
 	updateDeleteMetricEndpoint      = "/admin/api/services/%s/metrics/%s.xml"
 	ListAppPlansByService           = "/admin/api/services/%s/application_plans.xml"
@@ -29,6 +27,8 @@ const (
 	limitEndpoint                   = "/admin/api/application_plans/%s/metrics/%s/limits.xml"
 	listLimitPerAppPlanEndpoint     = "/admin/api/application_plans/%s/limits.xml"
 	listLimitPerMetricEndpoint      = "/admin/api/application_plans/%s/metrics/%s/limits.xml"
+	ServicesEndpoint                = "/admin/api/services.xml"
+	updateDeleteMappingRuleEndpoint = "/admin/api/services/%s/proxy/mapping_rules/%s.xml"
 )
 
 var httpReqError = errors.New("error building http request")

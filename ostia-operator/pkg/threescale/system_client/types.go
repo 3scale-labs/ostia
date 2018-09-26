@@ -145,6 +145,35 @@ type Plan struct {
 	Error              string   `xml:"error,omitempty"`
 }
 
+type ServiceList struct {
+	XMLName xml.Name `xml:"services"`
+	Text    string   `xml:",chardata"`
+	Service []struct {
+		Text                        string `xml:",chardata"`
+		ID                          string `xml:"id"`
+		AccountID                   string `xml:"account_id"`
+		Name                        string `xml:"name"`
+		State                       string `xml:"state"`
+		SystemName                  string `xml:"system_name"`
+		BackendVersion              string `xml:"backend_version"`
+		EndUserRegistrationRequired string `xml:"end_user_registration_required"`
+		Metrics                     struct {
+			Text   string   `xml:",chardata"`
+			Metric []Metric `xml:"metric"`
+			Method struct {
+				Text         string `xml:",chardata"`
+				ID           string `xml:"id"`
+				Name         string `xml:"name"`
+				SystemName   string `xml:"system_name"`
+				FriendlyName string `xml:"friendly_name"`
+				ServiceID    string `xml:"service_id"`
+				Description  string `xml:"description"`
+				MetricID     string `xml:"metric_id"`
+			} `xml:"method"`
+		} `xml:"metrics"`
+	} `xml:"service"`
+}
+
 type ErrorResp struct {
 	XMLName xml.Name `xml:"errors"`
 	Text    string   `xml:",chardata"`
