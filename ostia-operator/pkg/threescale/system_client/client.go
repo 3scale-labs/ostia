@@ -24,9 +24,6 @@ const (
 	ListAppPlansByService           = "/admin/api/services/%s/application_plans.xml"
 	ListAppPlans                    = "/admin/api/application_plans.xml"
 	AppPlanServiceEndpoint          = "/admin/api/services/%s/application_plans/%s.xml"
-	limitEndpoint                   = "/admin/api/application_plans/%s/metrics/%s/limits.xml"
-	listLimitPerAppPlanEndpoint     = "/admin/api/application_plans/%s/limits.xml"
-	listLimitPerMetricEndpoint      = "/admin/api/application_plans/%s/metrics/%s/limits.xml"
 	ServicesEndpoint                = "/admin/api/services.xml"
 	updateDeleteMappingRuleEndpoint = "/admin/api/services/%s/proxy/mapping_rules/%s.xml"
 )
