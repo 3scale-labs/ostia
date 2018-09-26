@@ -158,17 +158,8 @@ type ServiceList struct {
 		BackendVersion              string `xml:"backend_version"`
 		EndUserRegistrationRequired string `xml:"end_user_registration_required"`
 		Metrics                     struct {
-			Text   string `xml:",chardata"`
-			Metric []struct {
-				Text         string `xml:",chardata"`
-				ID           string `xml:"id"`
-				Name         string `xml:"name"`
-				SystemName   string `xml:"system_name"`
-				FriendlyName string `xml:"friendly_name"`
-				ServiceID    string `xml:"service_id"`
-				Description  string `xml:"description"`
-				Unit         string `xml:"unit"`
-			} `xml:"metric"`
+			Text   string   `xml:",chardata"`
+			Metric []Metric `xml:"metric"`
 			Method struct {
 				Text         string `xml:",chardata"`
 				ID           string `xml:"id"`

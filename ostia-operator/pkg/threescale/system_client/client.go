@@ -29,7 +29,6 @@ const (
 	listLimitPerMetricEndpoint      = "/admin/api/application_plans/%s/metrics/%s/limits.xml"
 	ServicesEndpoint                = "/admin/api/services.xml"
 	updateDeleteMappingRuleEndpoint = "/admin/api/services/%s/proxy/mapping_rules/%s.xml"
-	limitEndpoint                   = "/admin/api/application_plans/%s/metrics/%s/limits.xml"
 )
 
 var httpReqError = errors.New("error building http request")
