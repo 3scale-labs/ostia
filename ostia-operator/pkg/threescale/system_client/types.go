@@ -20,9 +20,9 @@ type ThreeScaleClient struct {
 	httpClient  *http.Client
 }
 
-// ApplicationResp - API response for create limit endpoint
-type ApplicationResp struct {
-	Name                    xml.Name `xml:",any"`
+// Application - API response for create app endpoint
+type Application struct {
+	Name                    xml.Name `xml:"application"`
 	ID                      string   `xml:"id"`
 	CreatedAt               string   `xml:"created_at"`
 	UpdatedAt               string   `xml:"updated_at"`
@@ -34,25 +34,17 @@ type ApplicationResp struct {
 	ServiceID               string   `xml:"service_id"`
 	UserKey                 string   `xml:"user_key"`
 	ProviderVerificationKey string   `xml:"provider_verification_key"`
-	Plan                    struct {
-		Text               string `xml:",chardata"`
-		Custom             string `xml:"custom,attr"`
-		Default            string `xml:"default,attr"`
-		ID                 string `xml:"id"`
-		Name               string `xml:"name"`
-		Type               string `xml:"type"`
-		State              string `xml:"state"`
-		ServiceID          string `xml:"service_id"`
-		EndUserRequired    string `xml:"end_user_required"`
-		SetupFee           string `xml:"setup_fee"`
-		CostPerMonth       string `xml:"cost_per_month"`
-		TrialPeriodDays    string `xml:"trial_period_days"`
-		CancellationPeriod string `xml:"cancellation_period"`
-	} `xml:"plan"`
-	AppName     string `xml:"name"`
-	Description string `xml:"description"`
-	ExtraFields string `xml:"extra_fields"`
-	Error       string `xml:"error,omitempty"`
+	Plan                    Plan     `xml:"plan"`
+	AppName                 string   `xml:"name"`
+	Description             string   `xml:"description"`
+	ExtraFields             string   `xml:"extra_fields"`
+	Error                   string   `xml:"error,omitempty"`
+}
+
+// ApplicationPlansList - Holds a list of application plans
+type ApplicationPlansList struct {
+	XMLName xml.Name `xml:"plans"`
+	Plans   []Plan   `xml:"plan"`
 }
 
 // Limit - Defines the object returned via the API for creation of a limit
@@ -107,29 +99,9 @@ type MetricList struct {
 	Metrics []Metric `xml:"metric"`
 }
 
-type AppPlansList struct {
-	XMLName xml.Name `xml:"plans"`
-	Text    string   `xml:",chardata"`
-	Plan    []struct {
-		Text               string `xml:",chardata"`
-		Custom             string `xml:"custom,attr"`
-		Default            string `xml:"default,attr"`
-		ID                 string `xml:"id"`
-		Name               string `xml:"name"`
-		Type               string `xml:"type"`
-		State              string `xml:"state"`
-		ServiceID          string `xml:"service_id"`
-		EndUserRequired    string `xml:"end_user_required"`
-		SetupFee           string `xml:"setup_fee"`
-		CostPerMonth       string `xml:"cost_per_month"`
-		TrialPeriodDays    string `xml:"trial_period_days"`
-		CancellationPeriod string `xml:"cancellation_period"`
-	} `xml:"plan"`
-}
-
 // Plan - API response for create application plan endpoint
 type Plan struct {
-	Name               xml.Name `xml:",any"`
+	XMLNameName        xml.Name `xml:"plan"`
 	Custom             string   `xml:"custom,attr"`
 	Default            string   `xml:"default,attr"`
 	ID                 string   `xml:"id"`
@@ -145,33 +117,20 @@ type Plan struct {
 	Error              string   `xml:"error,omitempty"`
 }
 
+type Service struct {
+	ID                          string     `xml:"id"`
+	AccountID                   string     `xml:"account_id"`
+	Name                        string     `xml:"name"`
+	State                       string     `xml:"state"`
+	SystemName                  string     `xml:"system_name"`
+	BackendVersion              string     `xml:"backend_version"`
+	EndUserRegistrationRequired string     `xml:"end_user_registration_required"`
+	Metrics                     MetricList `xml:"metrics"`
+}
+
 type ServiceList struct {
-	XMLName xml.Name `xml:"services"`
-	Text    string   `xml:",chardata"`
-	Service []struct {
-		Text                        string `xml:",chardata"`
-		ID                          string `xml:"id"`
-		AccountID                   string `xml:"account_id"`
-		Name                        string `xml:"name"`
-		State                       string `xml:"state"`
-		SystemName                  string `xml:"system_name"`
-		BackendVersion              string `xml:"backend_version"`
-		EndUserRegistrationRequired string `xml:"end_user_registration_required"`
-		Metrics                     struct {
-			Text   string   `xml:",chardata"`
-			Metric []Metric `xml:"metric"`
-			Method struct {
-				Text         string `xml:",chardata"`
-				ID           string `xml:"id"`
-				Name         string `xml:"name"`
-				SystemName   string `xml:"system_name"`
-				FriendlyName string `xml:"friendly_name"`
-				ServiceID    string `xml:"service_id"`
-				Description  string `xml:"description"`
-				MetricID     string `xml:"metric_id"`
-			} `xml:"method"`
-		} `xml:"metrics"`
-	} `xml:"service"`
+	XMLName  xml.Name  `xml:"services"`
+	Services []Service `xml:"service"`
 }
 
 type ErrorResp struct {
