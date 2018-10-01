@@ -31,11 +31,10 @@ func (c *ThreeScaleClient) CreateApp(accessToken string, accountId string, planI
 	}
 
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return apiResp, genRespErr("create application", err.Error())
 	}
+	defer resp.Body.Close()
 
 	if err := xml.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		return apiResp, genRespErr("create application", err.Error())
