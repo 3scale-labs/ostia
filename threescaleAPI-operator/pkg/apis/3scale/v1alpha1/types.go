@@ -21,8 +21,16 @@ type API struct {
 	Status            APIStatus `json:"status,omitempty"`
 }
 
+type The3ScaleConfig struct {
+	AccessToken       string `json:"AccessToken"`
+	AdminPortalURL    string `json:"AdminPortalURL"`
+	IntegrationMethod string `json:"IntegrationMethod"`
+}
+
 type APISpec struct {
-	// Fill me
+	The3ScaleConfig   The3ScaleConfig `json:"3scaleConfig"`
+	Endpoint          string          `json:"Endpoint"`
+	OpenAPIDefinition string          `json:"OpenAPIDefinition"`
 }
 type APIStatus struct {
 	// Fill me

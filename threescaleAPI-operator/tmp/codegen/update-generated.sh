@@ -6,7 +6,7 @@ set -o pipefail
 
 vendor/k8s.io/code-generator/generate-groups.sh \
 deepcopy \
-github.com/3scale/ostia/threescaleAPI/pkg/generated \
-github.com/3scale/ostia/threescaleAPI/pkg/apis \
+github.com/3scale/ostia/threescaleAPI-operator/pkg/generated \
+github.com/3scale/ostia/threescaleAPI-operator/pkg/apis \
 3scale:v1alpha1 \
 --go-header-file "./tmp/codegen/boilerplate.go.txt"

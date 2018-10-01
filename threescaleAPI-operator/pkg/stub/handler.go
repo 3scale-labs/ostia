@@ -3,7 +3,7 @@ package stub
 import (
 	"context"
 
-	"github.com/3scale/ostia/threescaleAPI/pkg/apis/3scale/v1alpha1"
+	"github.com/3scale/ostia/threescaleAPI-operator/pkg/apis/3scale/v1alpha1"
 
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
 	"github.com/sirupsen/logrus"

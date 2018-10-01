@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"time"
 
-	stub "github.com/3scale/ostia/threescaleAPI/pkg/stub"
+	stub "github.com/3scale/ostia/threescaleAPI-operator/pkg/stub"
 	sdk "github.com/operator-framework/operator-sdk/pkg/sdk"
 	k8sutil "github.com/operator-framework/operator-sdk/pkg/util/k8sutil"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
