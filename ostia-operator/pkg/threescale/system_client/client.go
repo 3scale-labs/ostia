@@ -19,7 +19,6 @@ const (
 	mappingRuleEndpoint             = "/admin/api/services/%s/proxy/mapping_rules.xml"
 	createListMetricEndpoint        = "/admin/api/services/%s/metrics.xml"
 	updateDeleteMetricEndpoint      = "/admin/api/services/%s/metrics/%s.xml"
-	ServicesEndpoint                = "/admin/api/services.xml"
 	updateDeleteMappingRuleEndpoint = "/admin/api/services/%s/proxy/mapping_rules/%s.xml"
 )
 

@@ -108,6 +108,10 @@ func (c *ThreeScaleClient) limitCreate(ep string, accessToken string, metricId s
 		return apiResp, genRespErr("create limit", err.Error())
 	}
 
+	if resp.StatusCode != http.StatusCreated {
+		return apiResp, genRespErr("create limit", handleErrResp(resp))
+	}
+
 	if err := xml.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		return apiResp, genRespErr("create limit", err.Error())
 	}
