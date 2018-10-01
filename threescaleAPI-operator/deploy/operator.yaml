@@ -1,21 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: threescaleAPI
+  name: threescaleapi
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: threescaleAPI
+      name: threescaleapi
   template:
     metadata:
       labels:
-        name: threescaleAPI
+        name: threescaleapi
     spec:
-      serviceAccountName: threescaleAPI
       containers:
-        - name: threescaleAPI
-          image: REPLACE_IMAGE
+        - name: threescaleapi
+          image: quay.io/3scale/threescaleapi-operator:v0.0.1
           ports:
           - containerPort: 60000
             name: metrics
@@ -28,4 +27,4 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: OPERATOR_NAME
-              value: "threescaleAPI"
+              value: "threescaleapi"
