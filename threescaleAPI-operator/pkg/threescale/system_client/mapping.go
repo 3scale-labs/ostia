@@ -132,14 +132,13 @@ func (c *ThreeScaleClient) ListMappingRule(accessToken string, svcId string) (Ma
 
 	req.URL.RawQuery = values.Encode()
 	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return mrl, genRespErr("mapping rule list failed", err.Error())
+	}
 	defer resp.Body.Close()
 
-	if err != nil {
-		return mrl, genRespErr("mapping rule list", err.Error())
-	}
-
 	if resp.StatusCode != http.StatusOK {
-		return mrl, genRespErr("mapping rule list", handleErrResp(resp))
+		return mrl, genRespErr("mapping rule list failed", handleErrResp(resp))
 	}
 
 	if err := xml.NewDecoder(resp.Body).Decode(&mrl); err != nil {

@@ -102,11 +102,11 @@ func (c *ThreeScaleClient) limitCreate(ep string, accessToken string, metricId s
 		return apiResp, httpReqError
 	}
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
 
 	if err != nil {
 		return apiResp, genRespErr("create limit", err.Error())
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
 		return apiResp, genRespErr("create limit", handleErrResp(resp))
@@ -133,11 +133,11 @@ func (c *ThreeScaleClient) updateLimit(ep string, accessToken string, p Params) 
 	}
 
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
 
 	if err != nil {
 		return l, genRespErr("update limit", err.Error())
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return l, genRespErr("update limit", handleErrResp(resp))
@@ -161,11 +161,11 @@ func (c *ThreeScaleClient) deleteLimit(ep string, accessToken string) error {
 	}
 
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return genRespErr("delete limit", err.Error())
 	}
+
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return genRespErr("delete limit", handleErrResp(resp))
@@ -187,11 +187,11 @@ func (c *ThreeScaleClient) listLimits(ep string, accessToken string) (LimitList,
 	req.URL.RawQuery = values.Encode()
 
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return ml, genRespErr("list limits per plan", err.Error())
 	}
+
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return ml, genRespErr("list limits per plan", handleErrResp(resp))

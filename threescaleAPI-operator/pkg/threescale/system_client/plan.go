@@ -33,11 +33,10 @@ func (c *ThreeScaleClient) CreateAppPlan(accessToken string, svcId string, name 
 	}
 
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return apiResp, genRespErr("create application plan", err.Error())
 	}
+	defer resp.Body.Close()
 
 	if err := xml.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		return apiResp, genRespErr("create application plan", err.Error())
@@ -63,11 +62,10 @@ func (c *ThreeScaleClient) UpdateAppPlan(accessToken string, svcId string, appPl
 	}
 
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return apiResp, genRespErr("Update application plan", err.Error())
 	}
+	defer resp.Body.Close()
 
 	if err := xml.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		return apiResp, genRespErr("Update application plan", err.Error())
@@ -89,11 +87,10 @@ func (c *ThreeScaleClient) DeleteAppPlan(accessToken string, svcId string, appPl
 	}
 
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return genRespErr("Delete App", err.Error())
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return genRespErr("Delete limit", handleErrResp(resp))
@@ -117,11 +114,10 @@ func (c *ThreeScaleClient) ListAppPlanByServiceId(accessToken string, svcId stri
 
 	req.URL.RawQuery = values.Encode()
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return appPlans, genRespErr("List Application Plans By Service:", err.Error())
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return appPlans, genRespErr("List Application Plans By Service:", handleErrResp(resp))
@@ -148,11 +144,10 @@ func (c *ThreeScaleClient) ListAppPlan(accessToken string) (ApplicationPlansList
 
 	req.URL.RawQuery = values.Encode()
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return appPlans, genRespErr("List Application Plans By Service:", err.Error())
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return appPlans, genRespErr("List Application Plans By Service:", handleErrResp(resp))
