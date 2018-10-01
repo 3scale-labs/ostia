@@ -313,9 +313,13 @@ func compareEndpoint(endpointA Endpoint, endpointB Endpoint) bool {
 
 }
 
-// TODO: MOVE TO THREESCALE PACKAGE
 func getServiceFromServiceSystemName(c *client.ThreeScaleClient, accessToken string, serviceName string) (client.Service, error) {
-	services, _ := c.ListServices(accessToken)
+	services, err := c.ListServices(accessToken)
+
+	if err != nil {
+		return client.Service{}, err
+	}
+
 	for _, service := range services.Services {
 		if service.SystemName == serviceName {
 			return service, nil
@@ -355,12 +359,7 @@ func getMetricFromMetricName(c *client.ThreeScaleClient, accessToken string, ser
 
 	return client.Metric{}, errors.New("not found")
 }
-func getEndpointsFrom3scaleSystem(c *client.ThreeScaleClient, accessToken string, serviceName string) (Endpoints, error) {
-
-	service, err := getServiceFromServiceSystemName(c, accessToken, serviceName)
-	if err != nil {
-		return Endpoints{}, err
-	}
+func getEndpointsFrom3scaleSystem(c *client.ThreeScaleClient, accessToken string, service client.Service) (Endpoints, error) {
 
 	mappingRules, _ := c.ListMappingRule(accessToken, service.ID)
 
@@ -451,14 +450,9 @@ func getEndpointsFromSwagger(swagger *openapi3.Swagger) (Endpoints, error) {
 
 	return endpoints, nil
 }
-func getPlansFrom3scaleSystem(c *client.ThreeScaleClient, accessToken string, serviceName string) (Plans, error) {
+func getPlansFrom3scaleSystem(c *client.ThreeScaleClient, accessToken string, service client.Service) (Plans, error) {
 
 	var plans Plans
-
-	service, err := getServiceFromServiceSystemName(c, accessToken, serviceName)
-	if err != nil {
-		return Plans{}, err
-	}
 
 	appPlans, _ := c.ListAppPlanByServiceId(accessToken, service.ID)
 
