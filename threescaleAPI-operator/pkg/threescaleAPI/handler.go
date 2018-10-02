@@ -27,7 +27,7 @@ func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
 
 	case *v1alpha1.API:
 
-		fmt.Println("Starting Run")
+		fmt.Printf("[i] Checking API: %s\n", o.Name)
 
 		swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromYAMLData([]byte(o.Spec.OpenAPIDefinition))
 		if err != nil {
@@ -89,40 +89,58 @@ func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
 			}
 
 			existingPlans, err := getPlansFrom3scaleSystem(c, accessToken, service)
+			existingEndpoints, err := getEndpointsFrom3scaleSystem(c, accessToken, service)
 
 			if !comparePlans(desiredPlans, existingPlans) {
 				fmt.Println("[!] Plans are not in Sync")
 				reconcilePlansAndLimits(c, service, accessToken, desiredPlans)
-				existingEndpoints, err := getEndpointsFrom3scaleSystem(c, accessToken, service)
 				if err != nil {
 					fmt.Printf("Couldn't get Endpoints from 3scale: %v\n", err)
 
 				}
-
-				if !compareEndpoints(desiredEndpoints, existingEndpoints) {
-					fmt.Println("[!] Endpoints are not in sync.")
-					err := reconcileEndpointsWith3scaleSystem(c, accessToken, service, existingEndpoints, desiredEndpoints)
-					if err != nil {
-						panic("something went wrong")
-					}
-				} else {
-					fmt.Println("[=] Endpoints are in sync. Nothing to do.")
-				}
-
-				if !comparePlans(desiredPlans, existingPlans) {
-					fmt.Println("[!] Plans are not in Sync")
-					reconcilePlansAndLimits(c, service, accessToken, desiredPlans)
-
-				} else {
-					fmt.Println("[=] Plans are in sync. Nothing to do.")
-				}
-
-				fmt.Println("Run done.")
 			}
-		}
-	}
+			if !compareEndpoints(desiredEndpoints, existingEndpoints) {
+				fmt.Println("[!] Endpoints are not in sync.")
+				err := reconcileEndpointsWith3scaleSystem(c, accessToken, service, existingEndpoints, desiredEndpoints)
+				if err != nil {
+					panic("something went wrong")
+				}
 
+			} else {
+				fmt.Println("[+] Endpoints are in sync. Nothing to do.")
+			}
+
+			if !comparePlans(desiredPlans, existingPlans) {
+				fmt.Println("[!] Plans are not in Sync")
+				reconcilePlansAndLimits(c, service, accessToken, desiredPlans)
+
+			} else {
+				fmt.Println("[+] Plans are in sync. Nothing to do.")
+			}
+
+			// We are not really checking the contents of the configuration, simply checking
+			// for a mismatch in the version. Not sure about the value of improving this...
+
+			productionProxy, _ := c.GetLatestProxyConfig(accessToken, service.ID, "production")
+			sandboxProxy, _ := c.GetLatestProxyConfig(accessToken, service.ID, "sandbox")
+
+			if productionProxy.ProxyConfig.Version != sandboxProxy.ProxyConfig.Version {
+				fmt.Println("[!] Proxy Config is not in sync")
+				_, err := c.PromoteProxyConfig(accessToken, service.ID, "sandbox", strconv.Itoa(sandboxProxy.ProxyConfig.Version), "production")
+				if err != nil {
+					return err
+				}
+			} else {
+				fmt.Println("[+] Proxy Config is in sync. Nothing to do.")
+			}
+
+			fmt.Println("[i] Run done.")
+
+		}
+
+	}
 	return nil
+
 }
 
 func createClientFromCrd(api *v1alpha1.API) (*client.ThreeScaleClient, error) {
