@@ -5,14 +5,15 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/3scale/ostia/threescaleAPI-operator/pkg/apis/3scale/v1alpha1"
-	"github.com/3scale/ostia/threescaleAPI-operator/pkg/threescale/system_client"
-	"github.com/getkin/kin-openapi/jsoninfo"
-	"github.com/getkin/kin-openapi/openapi3"
 	"os"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/3scale/ostia/threescaleAPI-operator/pkg/apis/3scale/v1alpha1"
+	"github.com/3scale/ostia/threescaleAPI-operator/pkg/threescale/system_client"
+	"github.com/getkin/kin-openapi/jsoninfo"
+	"github.com/getkin/kin-openapi/openapi3"
 )
 
 type ostiaExtensions struct {
