@@ -130,6 +130,13 @@ func reconcilePlansAndLimits(c *client.ThreeScaleClient, service client.Service,
 
 		}
 
+		if wantedPlan.Default {
+			_, err := c.SetDefaultPlan(accessToken, svcId, id)
+			if err != nil {
+				fmt.Println("error setting plan to default")
+			}
+		}
+
 		// In background, get a list of limits associated with the current plan
 		haveLimitsChan := make(chan client.LimitList)
 		go func() {
