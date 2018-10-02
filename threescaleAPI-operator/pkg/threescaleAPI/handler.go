@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
 func NewHandler() sdk.Handler {
@@ -59,7 +60,9 @@ func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
 
 			service, err := getServiceFromServiceSystemName(c, accessToken, serviceName)
 			if err != nil {
-				return fmt.Errorf("Service %s doesn't exists, error: %s", serviceName, err.Error())
+				if !strings.Contains(err.Error(), "not found") {
+					return err
+				}
 			}
 
 			err = c.DeleteService(accessToken, service.ID)
