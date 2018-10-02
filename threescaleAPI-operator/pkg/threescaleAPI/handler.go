@@ -35,10 +35,7 @@ func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
 		}
 
 		//Extract Plans from Swagger
-		desiredPlans, err := getPlansFromSwagger(swagger)
-		if err != nil {
-			panic(err)
-		}
+		desiredPlans := o.Spec.Plans
 
 		// Extract Endpoints from Swagger
 		desiredEndpoints, err := getEndpointsFromSwagger(swagger)

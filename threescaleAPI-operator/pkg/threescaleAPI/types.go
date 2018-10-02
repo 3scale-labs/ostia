@@ -71,31 +71,3 @@ type Metric struct {
 	Metric    string `json:"metric"`
 	Increment int64  `json:"increment"`
 }
-
-type Plans struct {
-	Plans []Plan `json:"plans"`
-}
-
-func (p Plans) Sort() Plans {
-	for _, plan := range p.Plans {
-		sort.Slice(plan.Limits, func(i, j int) bool {
-			if plan.Limits[i].Metric != plan.Limits[j].Metric {
-				return plan.Limits[i].Metric < plan.Limits[j].Metric
-			} else {
-				return plan.Limits[i].Max < plan.Limits[j].Max
-			}
-		})
-	}
-	return p
-}
-
-type Plan struct {
-	Name   string  `json:"name"`
-	Limits []Limit `json:"limits"`
-}
-
-type Limit struct {
-	Max    int64  `json:"max"`
-	Metric string `json:"metric"`
-	Period string `json:"period"`
-}

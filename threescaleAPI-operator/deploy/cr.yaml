@@ -8,6 +8,36 @@ spec:
      AdminPortalURL: "https://XXXXX-admin.3scale.net"
      IntegrationMethod: apicast
   upstream: "https://myUnprotectedAPI:80"
+  plans:
+    - name: basic
+      limits:
+      - max: 100
+        metric: hits
+        period: month
+      - max: 10
+        metric: hits
+        period: minute
+      - max: 0
+        metric: create_pet
+        period: eternity
+      - max: 5
+        metric: list_pets
+        period: minute
+    - name: premium
+      default: true
+      limits:
+      - max: 1000
+        metric: hits
+        period: month
+      - max: 100
+        metric: hits
+        period: minute
+      - max: 10
+        metric: create_pet
+        period: month
+      - max: 10
+        metric: list_pets
+        period: minute
   OpenAPIDefinition: |
     openapi: "3.0.0"
     info:
@@ -105,36 +135,6 @@ spec:
                 application/json:
                   schema:
                     $ref: "#/components/schemas/Error"
-    x-3scale-plans:
-      plans:
-      - name: basic
-        limits:
-        - max: 100
-          metric: hits
-          period: month
-        - max: 10
-          metric: hits
-          period: minute
-        - max: 0
-          metric: create_pet
-          period: eternity
-        - max: 5
-          metric: list_pets
-          period: minute
-      - name: premium
-        limits:
-        - max: 1000
-          metric: hits
-          period: month
-        - max: 100
-          metric: hits
-          period: minute
-        - max: 10
-          metric: create_pet
-          period: month
-        - max: 10
-          metric: list_pets
-          period: minute
     components:
       schemas:
         Pet:
