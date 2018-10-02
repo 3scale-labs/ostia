@@ -20,6 +20,7 @@ func (c *ThreeScaleClient) CreateService(accessToken string, name string) (Servi
 	values := url.Values{}
 	values.Add("access_token", accessToken)
 	values.Add("name", name)
+	values.Add("system_name", name)
 
 	body := strings.NewReader(values.Encode())
 	req, err := c.buildPostReq(endpoint, body)
