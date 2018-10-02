@@ -53,6 +53,17 @@
   version = "v2.8.0"
 
 [[projects]]
+  digest = "1:377c73544db8ac0f33ed7a430610ef49124839df3d2f220b2579311ad9f62f50"
+  name = "github.com/getkin/kin-openapi"
+  packages = [
+    "jsoninfo",
+    "openapi3",
+  ]
+  pruneopts = "NUT"
+  revision = "db27d873292dcb033e3ce56f142dfb0ee65d55d4"
+  version = "v0.1.0"
+
+[[projects]]
   digest = "1:81466b4218bf6adddac2572a30ac733a9255919bc2f470b4827a317bd4ee1756"
   name = "github.com/ghodss/yaml"
   packages = ["."]
@@ -673,12 +684,12 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/getkin/kin-openapi/jsoninfo",
+    "github.com/getkin/kin-openapi/openapi3",
     "github.com/operator-framework/operator-sdk/pkg/sdk",
     "github.com/operator-framework/operator-sdk/pkg/util/k8sutil",
     "github.com/operator-framework/operator-sdk/version",
     "github.com/sirupsen/logrus",
-    "k8s.io/api/core/v1",
-    "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/schema",
