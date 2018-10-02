@@ -26,6 +26,21 @@ func (ostiaExtensions *ostiaExtensions) UnmarshalJSON(data []byte) error {
 	return jsoninfo.UnmarshalStrictStruct(data, ostiaExtensions)
 }
 
+// Function which will check for the existence of a service by name and attempt
+// to create it if it does not already exist
+// Return error if unable to read current services from system or unable to create service
+func ensureServiceExists(c *client.ThreeScaleClient, accessToken string, name string) (client.Service, error) {
+	var svc client.Service
+	svc, err := getServiceFromServiceSystemName(c, accessToken, name)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			svc, err = c.CreateService(accessToken, name)
+
+		}
+	}
+	return svc, err
+}
+
 func reconcilePlansAndLimits(c *client.ThreeScaleClient, service client.Service, accessToken string, desiredPlans Plans) {
 	var planFetchErr error
 
