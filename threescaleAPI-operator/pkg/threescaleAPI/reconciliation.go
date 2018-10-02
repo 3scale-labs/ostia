@@ -35,10 +35,14 @@ func ensureServiceExists(c *client.ThreeScaleClient, accessToken string, name st
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			svc, err = c.CreateService(accessToken, name)
-
+			if err != nil {
+				return svc, err
+			}
+		} else {
+			return svc, err
 		}
 	}
-	return svc, err
+	return svc, nil
 }
 
 func reconcilePlansAndLimits(c *client.ThreeScaleClient, service client.Service, accessToken string, desiredPlans Plans) {
