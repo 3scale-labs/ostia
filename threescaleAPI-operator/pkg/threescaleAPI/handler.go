@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
 func NewHandler() sdk.Handler {
@@ -53,50 +54,72 @@ func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
 		accessToken := o.Spec.The3ScaleConfig.AccessToken
 		serviceName := o.Name
 
-		service, err := ensureServiceExists(c, accessToken, serviceName)
-		if err != nil {
-			return fmt.Errorf("error synchronizing service state - %s", err.Error())
+		if event.Deleted {
 
-		}
+			fmt.Printf("[-] Deleting service: %s\n", serviceName)
 
-		existingEndpoints, err := getEndpointsFrom3scaleSystem(c, accessToken, service)
-		if err != nil {
-			fmt.Printf("Couldn't get Endpoints from 3scale: %v\n", err)
-
-		}
-
-		existingPlans, err := getPlansFrom3scaleSystem(c, accessToken, service)
-
-		if !compareEndpoints(desiredEndpoints, existingEndpoints) {
-			fmt.Println("[!] Endpoints are not in sync.")
-			err := reconcileEndpointsWith3scaleSystem(c, accessToken, service, existingEndpoints, desiredEndpoints)
+			service, err := getServiceFromServiceSystemName(c, accessToken, serviceName)
 			if err != nil {
-				panic("something went wrong")
+				if !strings.Contains(err.Error(), "not found") {
+					return err
+				}
 			}
-		} else {
-			fmt.Println("[=] Endpoints are in sync. Nothing to do.")
-		}
 
-		// Calling proxy update here because if mapping rules have changed it needs to be called
-		// The call is idempotent so if upstream is same as before then we receive a 200
-		// This s less expensive than doing a proxy ready and a proxy update for the same effect
-		p := client.NewParams()
-		p.AddParam("api_backend", o.Spec.Upstream)
-		_, err = c.UpdateProxy(accessToken, service.ID, p)
-		if err != nil {
-			fmt.Printf("Problem calling proxy update api. Desired changes may not be propogated. Error %v", err)
-		}
-
-		if !comparePlans(desiredPlans, existingPlans) {
-			fmt.Println("[!] Plans are not in Sync")
-			reconcilePlansAndLimits(c, service, accessToken, desiredPlans)
+			err = c.DeleteService(accessToken, service.ID)
+			if err != nil {
+				return fmt.Errorf("Can't delete service %s, error: %s", serviceName, err.Error())
+			}
 
 		} else {
-			fmt.Println("[=] Plans are in sync. Nothing to do.")
+
+			service, err := ensureServiceExists(c, accessToken, serviceName)
+			if err != nil {
+				return fmt.Errorf("Error creating service: %s", err.Error())
+
+			}
+
+			// Calling proxy update here because if mapping rules have changed it needs to be called
+			// The call is idempotent so if upstream is same as before then we receive a 200
+			// This s less expensive than doing a proxy ready and a proxy update for the same effect
+			p := client.NewParams()
+			p.AddParam("api_backend", o.Spec.Upstream)
+			_, err = c.UpdateProxy(accessToken, service.ID, p)
+			if err != nil {
+				fmt.Printf("Problem calling proxy update api. Desired changes may not be propogated. Error %v", err)
+			}
+
+			existingPlans, err := getPlansFrom3scaleSystem(c, accessToken, service)
+
+			if !comparePlans(desiredPlans, existingPlans) {
+				fmt.Println("[!] Plans are not in Sync")
+				reconcilePlansAndLimits(c, service, accessToken, desiredPlans)
+				existingEndpoints, err := getEndpointsFrom3scaleSystem(c, accessToken, service)
+				if err != nil {
+					fmt.Printf("Couldn't get Endpoints from 3scale: %v\n", err)
+
+				}
+
+				if !compareEndpoints(desiredEndpoints, existingEndpoints) {
+					fmt.Println("[!] Endpoints are not in sync.")
+					err := reconcileEndpointsWith3scaleSystem(c, accessToken, service, existingEndpoints, desiredEndpoints)
+					if err != nil {
+						panic("something went wrong")
+					}
+				} else {
+					fmt.Println("[=] Endpoints are in sync. Nothing to do.")
+				}
+
+				if !comparePlans(desiredPlans, existingPlans) {
+					fmt.Println("[!] Plans are not in Sync")
+					reconcilePlansAndLimits(c, service, accessToken, desiredPlans)
+
+				} else {
+					fmt.Println("[=] Plans are in sync. Nothing to do.")
+				}
+
+				fmt.Println("Run done.")
+			}
 		}
-
-		fmt.Println("Run done.")
-
 	}
 
 	return nil
