@@ -7,7 +7,7 @@ spec:
      AccessToken: XXXXXXXXXXXXXXXXXXXXXXX
      AdminPortalURL: "https://XXXXX-admin.3scale.net"
      IntegrationMethod: apicast
-  APIEndpoint: "https://myUnprotectedAPI:80"
+  upstream: "https://myUnprotectedAPI:80"
   OpenAPIDefinition: |
     openapi: "3.0.0"
     info:
