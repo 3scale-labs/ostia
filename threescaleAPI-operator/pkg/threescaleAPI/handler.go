@@ -77,6 +77,16 @@ func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
 			fmt.Println("[=] Endpoints are in sync. Nothing to do.")
 		}
 
+		// Calling proxy update here because if mapping rules have changed it needs to be called
+		// The call is idempotent so if upstream is same as before then we receive a 200
+		// This s less expensive than doing a proxy ready and a proxy update for the same effect
+		p := client.NewParams()
+		p.AddParam("api_backend", o.Spec.Upstream)
+		_, err = c.UpdateProxy(accessToken, service.ID, p)
+		if err != nil {
+			fmt.Printf("Problem calling proxy update api. Desired changes may not be propogated. Error %v", err)
+		}
+
 		if !comparePlans(desiredPlans, existingPlans) {
 			fmt.Println("[!] Plans are not in Sync")
 			reconcilePlansAndLimits(c, service, accessToken, desiredPlans)

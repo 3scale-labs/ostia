@@ -29,7 +29,7 @@ type The3ScaleConfig struct {
 
 type APISpec struct {
 	The3ScaleConfig   The3ScaleConfig `json:"3scaleConfig"`
-	Endpoint          string          `json:"Endpoint"`
+	Upstream          string          `json:"upstream"`
 	OpenAPIDefinition string          `json:"OpenAPIDefinition"`
 }
 type APIStatus struct {
