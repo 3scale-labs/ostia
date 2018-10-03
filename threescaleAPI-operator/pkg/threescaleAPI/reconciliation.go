@@ -5,13 +5,15 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/3scale/ostia/threescaleAPI-operator/pkg/threescale/system_client"
-	"github.com/getkin/kin-openapi/jsoninfo"
-	"github.com/getkin/kin-openapi/openapi3"
 	"os"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/3scale/ostia/threescaleAPI-operator/pkg/apis/3scale/v1alpha1"
+	"github.com/3scale/ostia/threescaleAPI-operator/pkg/threescale/system_client"
+	"github.com/getkin/kin-openapi/jsoninfo"
+	"github.com/getkin/kin-openapi/openapi3"
 )
 
 type ostiaExtensions struct {
@@ -26,7 +28,26 @@ func (ostiaExtensions *ostiaExtensions) UnmarshalJSON(data []byte) error {
 	return jsoninfo.UnmarshalStrictStruct(data, ostiaExtensions)
 }
 
-func reconcilePlansAndLimits(c *client.ThreeScaleClient, service client.Service, accessToken string, desiredPlans Plans) {
+// Function which will check for the existence of a service by name and attempt
+// to create it if it does not already exist
+// Return error if unable to read current services from system or unable to create service
+func ensureServiceExists(c *client.ThreeScaleClient, accessToken string, name string) (client.Service, error) {
+	var svc client.Service
+	svc, err := getServiceFromServiceSystemName(c, accessToken, name)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			svc, err = c.CreateService(accessToken, name)
+			if err != nil {
+				return svc, err
+			}
+		} else {
+			return svc, err
+		}
+	}
+	return svc, nil
+}
+
+func reconcilePlansAndLimits(c *client.ThreeScaleClient, service client.Service, accessToken string, desiredPlans v1alpha1.Plans) {
 	var planFetchErr error
 
 	type mappingRuleStore map[string]struct {
@@ -70,7 +91,7 @@ func reconcilePlansAndLimits(c *client.ThreeScaleClient, service client.Service,
 	go func() {
 		for k, v := range havePlans {
 			keep := false
-			for _, plan := range desiredPlans.Plans {
+			for _, plan := range desiredPlans {
 				if plan.Name == k {
 					keep = true
 					break
@@ -88,7 +109,7 @@ func reconcilePlansAndLimits(c *client.ThreeScaleClient, service client.Service,
 	//mappingRuleValues := <-mrStoreC
 
 	// for all the plans we want
-	for _, wantedPlan := range desiredPlans.Plans {
+	for _, wantedPlan := range desiredPlans {
 		var id string
 		// Have you read this plan name previously? If its in the map then yes, set the id
 		if val, ok := havePlans[wantedPlan.Name]; ok {
@@ -107,6 +128,13 @@ func reconcilePlansAndLimits(c *client.ThreeScaleClient, service client.Service,
 			id = newPlan.ID
 			havePlans[newPlan.PlanName] = id
 
+		}
+
+		if wantedPlan.Default {
+			_, err := c.SetDefaultPlan(accessToken, svcId, id)
+			if err != nil {
+				fmt.Println("error setting plan to default")
+			}
 		}
 
 		// In background, get a list of limits associated with the current plan
@@ -220,22 +248,6 @@ func getAppPlans(c *client.ThreeScaleClient, svcId, accessToken string) (map[str
 	return nameToIds, nil
 
 }
-func decodePlans(s *openapi3.Swagger) (Plans, error) {
-	var desiredPlans Plans
-
-	switch s.Extensions["x-3scale-plans"].(type) {
-	case json.RawMessage:
-		err := json.Unmarshal(s.Extensions["x-3scale-plans"].(json.RawMessage), &desiredPlans)
-		if err != nil {
-			return desiredPlans, errors.New("error calling unmarshal of plans")
-
-		}
-	default:
-		return desiredPlans, errors.New("error - plans not recognised as json")
-
-	}
-	return desiredPlans, nil
-}
 
 func reconcileEndpointsWith3scaleSystem(c *client.ThreeScaleClient, accessToken string, service client.Service, existingEndpoints Endpoints, desiredEndpoints Endpoints) error {
 
@@ -289,7 +301,7 @@ func reconcileEndpointsWith3scaleSystem(c *client.ThreeScaleClient, accessToken 
 
 }
 
-func comparePlans(planA Plans, planB Plans) bool {
+func comparePlans(planA v1alpha1.Plans, planB v1alpha1.Plans) bool {
 
 	A, _ := json.Marshal(planA.Sort())
 	B, _ := json.Marshal(planB.Sort())
@@ -313,9 +325,13 @@ func compareEndpoint(endpointA Endpoint, endpointB Endpoint) bool {
 
 }
 
-// TODO: MOVE TO THREESCALE PACKAGE
 func getServiceFromServiceSystemName(c *client.ThreeScaleClient, accessToken string, serviceName string) (client.Service, error) {
-	services, _ := c.ListServices(accessToken)
+	services, err := c.ListServices(accessToken)
+
+	if err != nil {
+		return client.Service{}, err
+	}
+
 	for _, service := range services.Services {
 		if service.SystemName == serviceName {
 			return service, nil
@@ -355,12 +371,7 @@ func getMetricFromMetricName(c *client.ThreeScaleClient, accessToken string, ser
 
 	return client.Metric{}, errors.New("not found")
 }
-func getEndpointsFrom3scaleSystem(c *client.ThreeScaleClient, accessToken string, serviceName string) (Endpoints, error) {
-
-	service, err := getServiceFromServiceSystemName(c, accessToken, serviceName)
-	if err != nil {
-		return Endpoints{}, err
-	}
+func getEndpointsFrom3scaleSystem(c *client.ThreeScaleClient, accessToken string, service client.Service) (Endpoints, error) {
 
 	mappingRules, _ := c.ListMappingRule(accessToken, service.ID)
 
@@ -451,27 +462,22 @@ func getEndpointsFromSwagger(swagger *openapi3.Swagger) (Endpoints, error) {
 
 	return endpoints, nil
 }
-func getPlansFrom3scaleSystem(c *client.ThreeScaleClient, accessToken string, serviceName string) (Plans, error) {
+func getPlansFrom3scaleSystem(c *client.ThreeScaleClient, accessToken string, service client.Service) (v1alpha1.Plans, error) {
 
-	var plans Plans
-
-	service, err := getServiceFromServiceSystemName(c, accessToken, serviceName)
-	if err != nil {
-		return Plans{}, err
-	}
+	var plans v1alpha1.Plans
 
 	appPlans, _ := c.ListAppPlanByServiceId(accessToken, service.ID)
 
 	for _, v := range appPlans.Plans {
 
-		var plan Plan
+		var plan v1alpha1.Plan
 
 		limits, _ := c.ListLimitsPerAppPlan(accessToken, v.ID)
 
 		plan.Name = v.PlanName
 		metrics, _ := c.ListMetrics(accessToken, v.ServiceID)
 		for _, v := range limits.Limits {
-			var limit Limit
+			var limit v1alpha1.Limit
 			metricID := v.MetricID
 			var metricName string
 			for _, v := range metrics.Metrics {
@@ -486,21 +492,10 @@ func getPlansFrom3scaleSystem(c *client.ThreeScaleClient, accessToken string, se
 			plan.Limits = append(plan.Limits, limit)
 
 		}
-		plans.Plans = append(plans.Plans, plan)
+		plans = append(plans, plan)
 	}
 
 	return plans, nil
-}
-func getPlansFromSwagger(swagger *openapi3.Swagger) (Plans, error) {
-	var desiredPlans Plans
-
-	s, _ := json.Marshal(swagger.Extensions["x-3scale-plans"])
-	err := json.Unmarshal(s, &desiredPlans)
-	if err != nil {
-		return desiredPlans, err
-	}
-
-	return desiredPlans, nil
 }
 
 // getNonDesiredMetricsFromSystem returns a list of metrics that are in the current system but not desired

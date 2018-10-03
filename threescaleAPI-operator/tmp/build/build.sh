@@ -12,7 +12,7 @@ fi
 BIN_DIR="$(pwd)/tmp/_output/bin"
 mkdir -p ${BIN_DIR}
 PROJECT_NAME="threescaleAPI"
-REPO_PATH="github.com/3scale/ostia/threescaleAPI"
+REPO_PATH="github.com/3scale/ostia/threescaleAPI-operator"
 BUILD_PATH="${REPO_PATH}/cmd/${PROJECT_NAME}"
 TEST_PATH="${REPO_PATH}/${TEST_LOCATION}"
 echo "building "${PROJECT_NAME}"..."

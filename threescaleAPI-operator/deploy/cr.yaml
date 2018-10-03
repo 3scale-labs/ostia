@@ -1,4 +1,165 @@
-apiVersion: "3scale.net/v1alpha1"
-kind: "API"
-metadata:
-  name: "example"
+apiVersion: 3scale.net/v1alpha1
+kind: API
+metadata: 
+  name: merging
+spec: 
+  3scaleConfig:
+     AccessToken: XXXXXXXXXXXXXXXXXXXXXXX
+     AdminPortalURL: "https://XXXXX-admin.3scale.net"
+     IntegrationMethod: apicast
+  upstream: "https://myUnprotectedAPI:80"
+  plans:
+    - name: basic
+      limits:
+      - max: 100
+        metric: hits
+        period: month
+      - max: 10
+        metric: hits
+        period: minute
+      - max: 0
+        metric: create_pet
+        period: eternity
+      - max: 5
+        metric: list_pets
+        period: minute
+    - name: premium
+      default: true
+      limits:
+      - max: 1000
+        metric: hits
+        period: month
+      - max: 100
+        metric: hits
+        period: minute
+      - max: 10
+        metric: create_pet
+        period: month
+      - max: 10
+        metric: list_pets
+        period: minute
+  OpenAPIDefinition: |
+    openapi: "3.0.0"
+    info:
+      version: 1.0.0
+      title: Swagger Petstore
+      license:
+        name: MIT
+    servers:
+      - url: http://petstore.swagger.io/v1
+    paths:
+      /pets:
+        get:
+          x-3scale-metrics:
+            - metric: hits
+              increment: 1
+            - metric: list_pets
+              increment: 1
+          summary: List all pets
+          operationId: listPets
+          tags:
+            - pets
+          parameters:
+            - name: limit
+              in: query
+              description: How many items to return at one time (max 100)
+              required: false
+              schema:
+                type: integer
+                format: int32
+          responses:
+            '200':
+              description: A paged array of pets
+              headers:
+                x-next:
+                  description: A link to the next page of responses
+                  schema:
+                    type: string
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Pets"
+            default:
+              description: unexpected error
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Error"
+        post:
+          x-3scale-metrics:
+            - metric: hits
+              increment: 1
+            - metric: create_pet
+              increment: 1
+          summary: Create a pet
+          operationId: createPets
+          tags:
+            - pets
+          responses:
+            '201':
+              description: Null response
+            default:
+              description: unexpected error
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Error"
+      /pets/{petId}:
+        get:
+          x-3scale-metrics:
+            - metric: hits
+              increment: 1
+            - metric: get_pet
+              increment: 1
+          summary: Info for a specific pet
+          operationId: showPetById
+          tags:
+            - pets
+          parameters:
+            - name: petId
+              in: path
+              required: true
+              description: The id of the pet to retrieve
+              schema:
+                type: string
+          responses:
+            '200':
+              description: Expected response to a valid request
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Pets"
+            default:
+              description: unexpected error
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Error"
+    components:
+      schemas:
+        Pet:
+          required:
+            - id
+            - name
+          properties:
+            id:
+              type: integer
+              format: int64
+            name:
+              type: string
+            tag:
+              type: string
+        Pets:
+          type: array
+          items:
+            $ref: "#/components/schemas/Pet"
+        Error:
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: integer
+              format: int32
+            message:
+              type: string

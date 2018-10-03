@@ -27,11 +27,10 @@ func (c *ThreeScaleClient) CreateMetric(accessToken string, svcId string, name s
 		return m, httpReqError
 	}
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return m, genRespErr("create metric", err.Error())
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
 		return m, genRespErr("create metric", handleErrResp(resp))
@@ -65,11 +64,10 @@ func (c *ThreeScaleClient) UpdateMetric(accessToken string, svcId string, id str
 	}
 
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return m, genRespErr("update metric", err.Error())
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return m, genRespErr("update metric", handleErrResp(resp))
@@ -96,11 +94,10 @@ func (c *ThreeScaleClient) DeleteMetric(accessToken string, svcId string, id str
 	}
 
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return genRespErr("delete metric", err.Error())
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return genRespErr("update metric", handleErrResp(resp))
@@ -124,11 +121,11 @@ func (c *ThreeScaleClient) ListMetrics(accessToken string, svcId string) (Metric
 	req.URL.RawQuery = values.Encode()
 
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
 
 	if err != nil {
 		return ml, genRespErr("create metric", err.Error())
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return ml, genRespErr("create metric", handleErrResp(resp))

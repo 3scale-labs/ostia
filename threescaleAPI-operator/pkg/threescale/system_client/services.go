@@ -20,6 +20,7 @@ func (c *ThreeScaleClient) CreateService(accessToken string, name string) (Servi
 	values := url.Values{}
 	values.Add("access_token", accessToken)
 	values.Add("name", name)
+	values.Add("system_name", name)
 
 	body := strings.NewReader(values.Encode())
 	req, err := c.buildPostReq(endpoint, body)
@@ -28,11 +29,10 @@ func (c *ThreeScaleClient) CreateService(accessToken string, name string) (Servi
 	}
 
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return s, genRespErr("create service", err.Error())
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
 		return s, genRespErr("create service", handleErrResp(resp))
@@ -69,11 +69,10 @@ func (c *ThreeScaleClient) UpdateService(accessToken string, id string, params P
 	}
 
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return s, genRespErr("update service", err.Error())
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return s, genRespErr("update service", handleErrResp(resp))
@@ -100,11 +99,10 @@ func (c *ThreeScaleClient) DeleteService(accessToken string, id string) error {
 	}
 
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return genRespErr("delete service", err.Error())
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return genRespErr("delete service", handleErrResp(resp))
@@ -127,11 +125,10 @@ func (c *ThreeScaleClient) ListServices(accessToken string) (ServiceList, error)
 	req.URL.RawQuery = values.Encode()
 
 	resp, err := c.httpClient.Do(req)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return sl, genRespErr("List Services:", err.Error())
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return sl, genRespErr("List Services:", handleErrResp(resp))
@@ -140,5 +137,6 @@ func (c *ThreeScaleClient) ListServices(accessToken string) (ServiceList, error)
 	if err := xml.NewDecoder(resp.Body).Decode(&sl); err != nil {
 		return sl, genRespErr("List Services:", err.Error())
 	}
+
 	return sl, nil
 }

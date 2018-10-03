@@ -1,6 +1,8 @@
 package v1alpha1
 
 import (
+	"sort"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,9 +31,38 @@ type The3ScaleConfig struct {
 
 type APISpec struct {
 	The3ScaleConfig   The3ScaleConfig `json:"3scaleConfig"`
-	Endpoint          string          `json:"Endpoint"`
+	Upstream          string          `json:"upstream"`
 	OpenAPIDefinition string          `json:"OpenAPIDefinition"`
+	Plans             Plans           `json:"plans"`
 }
 type APIStatus struct {
 	// Fill me
+}
+
+// TODO - If Plans are expected to be common across backends, this should be moved from here as appropriate
+type Plans []Plan
+
+func (p Plans) Sort() Plans {
+	for _, plan := range p {
+		sort.Slice(plan.Limits, func(i, j int) bool {
+			if plan.Limits[i].Metric != plan.Limits[j].Metric {
+				return plan.Limits[i].Metric < plan.Limits[j].Metric
+			} else {
+				return plan.Limits[i].Max < plan.Limits[j].Max
+			}
+		})
+	}
+	return p
+}
+
+type Plan struct {
+	Default bool    `json:"default, omitempty"`
+	Name    string  `json:"name"`
+	Limits  []Limit `json:"limits"`
+}
+
+type Limit struct {
+	Max    int64  `json:"max"`
+	Metric string `json:"metric"`
+	Period string `json:"period"`
 }
