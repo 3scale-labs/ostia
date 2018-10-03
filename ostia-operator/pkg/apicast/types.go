@@ -2,11 +2,6 @@ package apicast
 
 import "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
 
-const (
-	apicastImage   = "quay.io/3scale/apicast"
-	apicastVersion = "3.3-stable"
-)
-
 // Config is the configuration for APIcast
 type Config struct {
 	Services []Services `json:"services"`
