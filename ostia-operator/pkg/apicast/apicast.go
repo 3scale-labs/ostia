@@ -2,7 +2,9 @@ package apicast
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
+	"os"
 
 	"github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
 	openshiftv1 "github.com/openshift/api/apps/v1"
@@ -13,6 +15,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+const (
+	defaultApicastImage   = "quay.io/3scale/apicast"
+	defaultApicastVersion = "master"
+)
+
+var apicastImage = getProxyImageVersion()
 
 //TODO: Define proper labels.
 func labelsForAPIcast(name string) map[string]string {
@@ -56,7 +65,7 @@ func DeploymentConfig(api *v1alpha1.API) (*openshiftv1.DeploymentConfig, error) 
 				Spec: v1.PodSpec{
 					Containers: []v1.Container{
 						{
-							Image: apicastImage + ":" + apicastVersion,
+							Image: apicastImage,
 							Name:  "apicast",
 							Ports: []v1.ContainerPort{
 								{ContainerPort: 8080, Name: "proxy", Protocol: "TCP"},
@@ -232,4 +241,18 @@ func newProbe(path string, port int32, initDelay int32, timeout int32, period in
 		TimeoutSeconds:      timeout,
 		PeriodSeconds:       period,
 	}
+}
+
+func getProxyImageVersion() string {
+	image, imageSet := os.LookupEnv("APICAST_IMAGE")
+	if !imageSet || image == "" {
+		image = defaultApicastImage
+	}
+
+	tag, tagSet := os.LookupEnv("APICAST_VERSION")
+	if !tagSet || tag == "" {
+		tag = defaultApicastVersion
+	}
+
+	return fmt.Sprintf("%s:%s", image, tag)
 }
