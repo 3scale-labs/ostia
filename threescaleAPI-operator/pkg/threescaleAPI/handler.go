@@ -3,11 +3,15 @@ package threescaleAPI
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+
+	coreV1 "k8s.io/api/core/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/3scale/ostia/threescaleAPI-operator/pkg/apis/3scale/v1alpha1"
 	"github.com/3scale/ostia/threescaleAPI-operator/pkg/threescale/system_client"
@@ -15,12 +19,14 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
 )
 
-func NewHandler() sdk.Handler {
-	return &Handler{}
+func NewHandler(ns string) sdk.Handler {
+	return &Handler{
+		namespace: ns,
+	}
 }
 
 type Handler struct {
-	// Fill me
+	namespace string
 }
 
 func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
@@ -32,7 +38,7 @@ func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
 
 		swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromYAMLData([]byte(o.Spec.OpenAPIDefinition))
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("error loading swagger definition - API %s - error %v", o.Name, err)
 		}
 
 		//Extract Plans from Swagger
@@ -41,15 +47,19 @@ func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
 		// Extract Endpoints from Swagger
 		desiredEndpoints, err := getEndpointsFromSwagger(swagger)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("error decoding desired endpoints from swagger definition - API %s - error %v", o.Name, err)
 		}
 
-		c, err := createClientFromCrd(o)
+		accessToken, portalUrl, err := extractClientCredentials(o, h.namespace)
 		if err != nil {
-			panic("error creating required client for 3scale system")
+			return fmt.Errorf("error extracting credentials required for 3scale system client - API %s - error %v", o.Name, err)
 		}
 
-		accessToken := o.Spec.The3ScaleConfig.AccessToken
+		c, err := createSystemClient(portalUrl)
+		if err != nil {
+			return fmt.Errorf("error creating required client for 3scale system - API %s - error %v", o.Name, err)
+		}
+
 		serviceName := o.Name
 
 		if event.Deleted {
@@ -141,8 +151,66 @@ func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
 
 }
 
-func createClientFromCrd(api *v1alpha1.API) (*client.ThreeScaleClient, error) {
-	systemAdminPortalURL, err := url.Parse(api.Spec.The3ScaleConfig.AdminPortalURL)
+func extractClientCredentials(api *v1alpha1.API, namespace string) (accessToken, adminUrl string, err error) {
+	if api.Spec.The3ScaleConfig.Credentials.Secret != nil {
+		return extractCredentialsFromSecret(api, namespace)
+	}
+
+	accessToken = api.Spec.The3ScaleConfig.Credentials.AccessToken
+	if accessToken == "" {
+		return accessToken, adminUrl, fmt.Errorf("access token for 3scale system api must be set or provided via secret for api %s", api.Name)
+	}
+
+	adminUrl = api.Spec.The3ScaleConfig.Credentials.AdminPortalURL
+	if adminUrl == "" {
+		return accessToken, adminUrl, fmt.Errorf("admin portal url for 3scale system api must be set or provided via secret for api %s", api.Name)
+	}
+
+	return accessToken, adminUrl, nil
+}
+
+func extractCredentialsFromSecret(api *v1alpha1.API, namespace string) (accessToken, adminUrl string, err error) {
+	secretName := api.Spec.The3ScaleConfig.Credentials.Secret.Name
+	ns := api.Spec.The3ScaleConfig.Credentials.Secret.Namespace
+	if ns == "" {
+		ns = namespace
+	}
+	if secretName == "" {
+		err = errors.New("secret name cannot be empty")
+		return accessToken, adminUrl, err
+	}
+
+	secret := &coreV1.Secret{
+		TypeMeta: metaV1.TypeMeta{
+			Kind: "Secret",
+		},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      secretName,
+			Namespace: ns,
+		},
+	}
+	err = sdk.Get(secret)
+	if err != nil {
+		return accessToken, adminUrl, fmt.Errorf("error fetching secret %s - %s", secretName, err.Error())
+	}
+
+	if token, ok := secret.Data["access_token"]; ok {
+		accessToken = string(token)
+	} else {
+		return accessToken, adminUrl, errors.New("'access_token key must be set in secret'")
+	}
+
+	if url, ok := secret.Data["admin_portal_url"]; ok {
+		adminUrl = string(url)
+	} else {
+		return accessToken, adminUrl, errors.New("'admin_portal_url key must be set in secret'")
+	}
+
+	return accessToken, adminUrl, nil
+}
+
+func createSystemClient(portalUrl string) (*client.ThreeScaleClient, error) {
+	systemAdminPortalURL, err := url.Parse(portalUrl)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing 3scale url from crd - %s", err.Error())
 	}

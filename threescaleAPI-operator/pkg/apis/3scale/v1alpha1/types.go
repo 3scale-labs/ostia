@@ -24,9 +24,8 @@ type API struct {
 }
 
 type The3ScaleConfig struct {
-	AccessToken       string `json:"AccessToken"`
-	AdminPortalURL    string `json:"AdminPortalURL"`
-	IntegrationMethod string `json:"IntegrationMethod"`
+	Credentials       ThreeScaleCredentials `json:"credentials"`
+	IntegrationMethod string                `json:"IntegrationMethod"`
 }
 
 type APISpec struct {
@@ -37,6 +36,17 @@ type APISpec struct {
 }
 type APIStatus struct {
 	// Fill me
+}
+
+type CredentialSecret struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+}
+
+type ThreeScaleCredentials struct {
+	Secret         *CredentialSecret `json:"secret,omitempty"`
+	AccessToken    string            `json:"access_token"`
+	AdminPortalURL string            `json:"admin_portal_url"`
 }
 
 // TODO - If Plans are expected to be common across backends, this should be moved from here as appropriate
