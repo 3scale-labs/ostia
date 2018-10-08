@@ -34,6 +34,6 @@ func main() {
 	resyncPeriod := time.Duration(60) * time.Second
 	logrus.Infof("Watching %s, %s, %s, %d", resource, kind, namespace, resyncPeriod)
 	sdk.Watch(resource, kind, namespace, resyncPeriod)
-	sdk.Handle(threescaleAPI.NewHandler())
+	sdk.Handle(threescaleAPI.NewHandler(namespace))
 	sdk.Run(context.TODO())
 }
