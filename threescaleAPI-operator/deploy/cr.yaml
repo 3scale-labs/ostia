@@ -4,8 +4,9 @@ metadata:
   name: merging
 spec: 
   3scaleConfig:
-     AccessToken: XXXXXXXXXXXXXXXXXXXXXXX
-     AdminPortalURL: "https://XXXXX-admin.3scale.net"
+     credentials:
+       access_token: XXXXXXXXXXXXXXXXXXXXXXX
+       admin_portal_url: "https://XXXXX-admin.3scale.net"
      IntegrationMethod: apicast
   upstream: "https://myUnprotectedAPI:80"
   plans:
