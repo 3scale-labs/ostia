@@ -104,7 +104,7 @@ type MetricList struct {
 type Plan struct {
 	XMLNameName        xml.Name `xml:"plan"`
 	Custom             string   `xml:"custom,attr"`
-	Default            string   `xml:"default,attr"`
+	Default            bool     `xml:"default,attr"`
 	ID                 string   `xml:"id"`
 	PlanName           string   `xml:"name"`
 	Type               string   `xml:"type"`

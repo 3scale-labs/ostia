@@ -475,6 +475,7 @@ func getPlansFrom3scaleSystem(c *client.ThreeScaleClient, accessToken string, se
 		limits, _ := c.ListLimitsPerAppPlan(accessToken, v.ID)
 
 		plan.Name = v.PlanName
+		plan.Default = v.Default
 		metrics, _ := c.ListMetrics(accessToken, v.ServiceID)
 		for _, v := range limits.Limits {
 			var limit v1alpha1.Limit

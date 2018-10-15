@@ -99,14 +99,6 @@ func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
 			existingPlans, err := getPlansFrom3scaleSystem(c, accessToken, service)
 			existingEndpoints, err := getEndpointsFrom3scaleSystem(c, accessToken, service)
 
-			if !comparePlans(desiredPlans, existingPlans) {
-				fmt.Println("[!] Plans are not in Sync")
-				reconcilePlansAndLimits(c, service, accessToken, desiredPlans)
-				if err != nil {
-					fmt.Printf("Couldn't get Endpoints from 3scale: %v\n", err)
-
-				}
-			}
 			if !compareEndpoints(desiredEndpoints, existingEndpoints) {
 				fmt.Println("[!] Endpoints are not in sync.")
 				err := reconcileEndpointsWith3scaleSystem(c, accessToken, service, existingEndpoints, desiredEndpoints)
