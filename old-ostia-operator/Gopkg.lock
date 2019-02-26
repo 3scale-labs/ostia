@@ -2,6 +2,18 @@
 
 
 [[projects]]
+  branch = "master"
+  digest = "1:c44cda6c40d716daadb5a9ff9597c486019c7c513941ae49efcbd086635e90be"
+  name = "github.com/3scale/ostia"
+  packages = [
+    "ostia-operator/pkg/apicast",
+    "ostia-operator/pkg/apis/ostia/v1alpha1",
+    "ostia-operator/pkg/stub",
+  ]
+  pruneopts = ""
+  revision = "1b7bfca89e6ddc7e3c5627484cca6e2f9b8804a8"
+
+[[projects]]
   digest = "1:8e47871087b94913898333f37af26732faaab30cdb41571136cf7aec9921dae7"
   name = "github.com/PuerkitoBio/purell"
   packages = ["."]
@@ -588,6 +600,9 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/3scale/ostia/ostia-operator/pkg/apicast",
+    "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1",
+    "github.com/3scale/ostia/ostia-operator/pkg/stub",
     "github.com/openshift/api/apps/v1",
     "github.com/openshift/api/route/v1",
     "github.com/operator-framework/operator-sdk/commands/operator-sdk",
