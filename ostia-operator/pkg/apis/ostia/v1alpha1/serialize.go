@@ -145,17 +145,17 @@ func (c *Condition) setOperations(b json.RawMessage) error {
 		if _, ok := condition["header"]; ok {
 			var h HeaderBasedCondition
 			conditionErr = json.Unmarshal(op, &h)
-			// FIXME: c.Operations = append(c.Operations, h)
+			c.Operations = append(c.Operations, &h)
 
 		} else if _, ok := condition["http_method"]; ok {
 			var hm MethodBasedCondition
 			conditionErr = json.Unmarshal(op, &hm)
-			// FIXME: c.Operations = append(c.Operations, hm)
+			c.Operations = append(c.Operations, &hm)
 
 		} else if _, ok := condition["request_path"]; ok {
 			var rp PathBasedCondition
 			conditionErr = json.Unmarshal(op, &rp)
-			// FIXME: c.Operations = append(c.Operations, rp)
+			c.Operations = append(c.Operations, &rp)
 
 		}
 
