@@ -50,20 +50,24 @@ type Condition struct {
 // RateLimitCondition is an interface for a type which should marshal to apicast config
 type RateLimitCondition interface {
 	MarshalJSON() ([]byte, error)
+	DeepCopyRateLimitCondition() RateLimitCondition
 }
 
-type headerBasedCondition struct {
+// +k8s:deepcopy-gen:interfaces=github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1.RateLimitCondition
+type HeaderBasedCondition struct {
 	Header    string `json:"header"`
 	Operation string `json:"op, omitempty"`
 	Value     string `json:"value"`
 }
 
-type methodBasedCondition struct {
+// +k8s:deepcopy-gen:interfaces=github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1.RateLimitCondition
+type MethodBasedCondition struct {
 	Method    string `json:"http_method"`
 	Operation string `json:"op, omitempty"`
 }
 
-type pathBasedCondition struct {
+// +k8s:deepcopy-gen:interfaces=github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1.RateLimitCondition
+type PathBasedCondition struct {
 	Path      string `json:"request_path,omitempty"`
 	Operation string `json:"op, omitempty"`
 }

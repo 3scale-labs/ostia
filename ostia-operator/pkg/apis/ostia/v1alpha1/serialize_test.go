@@ -18,7 +18,7 @@ func TestUnmarshalCondition(t *testing.T) {
 			expectC: &Condition{
 				Operator: "",
 				Operations: []RateLimitCondition{
-					methodBasedCondition{Method: "GET"},
+					MethodBasedCondition{Method: "GET"},
 				},
 			},
 			expectErr: false,
@@ -28,7 +28,7 @@ func TestUnmarshalCondition(t *testing.T) {
 			expectC: &Condition{
 				Operator: "",
 				Operations: []RateLimitCondition{
-					methodBasedCondition{Method: "GET"},
+					MethodBasedCondition{Method: "GET"},
 				},
 			},
 			expectErr: false,
@@ -38,8 +38,8 @@ func TestUnmarshalCondition(t *testing.T) {
 			expectC: &Condition{
 				Operator: "or",
 				Operations: []RateLimitCondition{
-					methodBasedCondition{Method: "GET"},
-					pathBasedCondition{Path: "/test", Operation: "!="},
+					MethodBasedCondition{Method: "GET"},
+					PathBasedCondition{Path: "/test", Operation: "!="},
 				},
 			},
 			expectErr: false,
@@ -49,9 +49,9 @@ func TestUnmarshalCondition(t *testing.T) {
 			expectC: &Condition{
 				Operator: "and",
 				Operations: []RateLimitCondition{
-					methodBasedCondition{Method: "GET"},
-					pathBasedCondition{Path: "/test", Operation: "!="},
-					headerBasedCondition{Header: "TEST", Value: "test"},
+					MethodBasedCondition{Method: "GET"},
+					PathBasedCondition{Path: "/test", Operation: "!="},
+					HeaderBasedCondition{Header: "TEST", Value: "test"},
 				},
 			},
 			expectErr: false,
@@ -89,47 +89,47 @@ func TestMarshalJSON(t *testing.T) {
 		expectErr      bool
 	}{
 		{
-			obj:            pathBasedCondition{Path: "/test_default_eq"},
+			obj:            PathBasedCondition{Path: "/test_default_eq"},
 			expectContents: `{"left":"{{uri}}","left_type":"liquid","op":"==","right":"/test_default_eq"}`,
 		},
 		{
-			obj:            pathBasedCondition{Path: "/test_default_eq", Operation: "!="},
+			obj:            PathBasedCondition{Path: "/test_default_eq", Operation: "!="},
 			expectContents: `{"left":"{{uri}}","left_type":"liquid","op":"!=","right":"/test_default_eq"}`,
 		},
 		{
-			obj:       pathBasedCondition{Path: "/test_default_eq", Operation: "invalid"},
+			obj:       PathBasedCondition{Path: "/test_default_eq", Operation: "invalid"},
 			expectErr: true,
 		},
 		{
-			obj:       pathBasedCondition{Path: "/invalid*", Operation: "invalid"},
+			obj:       PathBasedCondition{Path: "/invalid*", Operation: "invalid"},
 			expectErr: true,
 		},
 		{
-			obj:       pathBasedCondition{Path: "\bad_path*"},
+			obj:       PathBasedCondition{Path: "\bad_path*"},
 			expectErr: true,
 		},
 		{
-			obj:            headerBasedCondition{Header: "test", Value: "example"},
+			obj:            HeaderBasedCondition{Header: "test", Value: "example"},
 			expectContents: `{"left":"{{headers['test']}}","left_type":"liquid","op":"==","right":"example"}`,
 		},
 		{
-			obj:       headerBasedCondition{Header: "", Value: "example"},
+			obj:       HeaderBasedCondition{Header: "", Value: "example"},
 			expectErr: true,
 		},
 		{
-			obj:       headerBasedCondition{Header: "test", Value: ""},
+			obj:       HeaderBasedCondition{Header: "test", Value: ""},
 			expectErr: true,
 		},
 		{
-			obj:            methodBasedCondition{Method: "GET"},
+			obj:            MethodBasedCondition{Method: "GET"},
 			expectContents: `{"left":"{{http_method}}","left_type":"liquid","op":"==","right":"GET"}`,
 		},
 		{
-			obj:            methodBasedCondition{Method: "get"},
+			obj:            MethodBasedCondition{Method: "get"},
 			expectContents: `{"left":"{{http_method}}","left_type":"liquid","op":"==","right":"GET"}`,
 		},
 		{
-			obj:       methodBasedCondition{Method: "INVALID"},
+			obj:       MethodBasedCondition{Method: "INVALID"},
 			expectErr: true,
 		},
 	}
