@@ -1,3 +1,0 @@
-apiVersion: ostia.3scale.net/v1alpha1
-kind: API
-projectName: ostia-operator

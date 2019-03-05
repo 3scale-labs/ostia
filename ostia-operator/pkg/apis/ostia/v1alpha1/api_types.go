@@ -4,24 +4,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// APIList is a list of API objects with extra Metadata
-type APIList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata"`
-	Items           []API `json:"items"`
-}
-
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// API struct is used to define an API object
-type API struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata"`
-	Spec              APISpec   `json:"spec"`
-	Status            APIStatus `json:"status,omitempty"`
-}
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // APISpec Contains the Spec of the API object
 type APISpec struct {
@@ -65,20 +49,49 @@ type Condition struct {
 // RateLimitCondition is an interface for a type which should marshal to apicast config
 type RateLimitCondition interface {
 	MarshalJSON() ([]byte, error)
+	DeepCopyRateLimitCondition() RateLimitCondition
 }
 
-type headerBasedCondition struct {
+// +k8s:deepcopy-gen:interfaces=github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1.RateLimitCondition
+type HeaderBasedCondition struct {
 	Header    string `json:"header"`
 	Operation string `json:"op, omitempty"`
 	Value     string `json:"value"`
 }
 
-type methodBasedCondition struct {
+// +k8s:deepcopy-gen:interfaces=github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1.RateLimitCondition
+type MethodBasedCondition struct {
 	Method    string `json:"http_method"`
 	Operation string `json:"op, omitempty"`
 }
 
-type pathBasedCondition struct {
+// +k8s:deepcopy-gen:interfaces=github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1.RateLimitCondition
+type PathBasedCondition struct {
 	Path      string `json:"request_path,omitempty"`
 	Operation string `json:"op, omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// API is the Schema for the apis API
+// +k8s:openapi-gen=true
+type API struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   APISpec   `json:"spec,omitempty"`
+	Status APIStatus `json:"status,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// APIList contains a list of API
+type APIList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []API `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&API{}, &APIList{})
 }

@@ -33,7 +33,7 @@ init() {
     fi
 
     test_perms create CustomResourceDefinition
-    oc create -f ../deploy/crd.yaml &> /dev/null || true
+    oc create -f ../deploy/crds/ostia_v1alpha1_api_crd.yaml -n default
     test_perms create RoleBinding
 }
 

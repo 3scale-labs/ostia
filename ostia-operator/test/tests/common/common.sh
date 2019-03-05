@@ -65,7 +65,7 @@ wait_for_pod_ready () {
         sleep 10
     fi
  done
- echo "Pod was not ready in time"
+ echo "ERROR: Pod with label ${1}=${2} was not ready in time."
  exit 1
 }
 
