@@ -1,99 +1,126 @@
 package apicast
 
 import (
+	"context"
+	ostiav1alpha1 "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
-	"github.com/operator-framework/operator-sdk/pkg/sdk"
-	log "github.com/sirupsen/logrus"
 )
 
 //Reconcile takes care of the main apicast reconciliation loop
-func Reconcile(api *v1alpha1.API) (err error) {
+func Reconcile(client client.Client, request reconcile.Request) (err error) {
+	// Fetch the API instance
+	api := &ostiav1alpha1.API{}
 
-	log.Infof("[%s] Got API Object: %s", api.Namespace, api.Name)
+	err = client.Get(context.TODO(), request.NamespacedName, api)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			return nil
+		}
+		// Error reading the object - requeue the request.
+		return err
+	}
+	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 
 	// Reconcile DeploymentConfig object
-	err = reconcileDeploymentConfig(api)
+	err = reconcileDeploymentConfig(client, api)
 	if err != nil {
-		log.Errorf("[%s] API: %s Failed to reconcile DeploymenConfig %v", api.Namespace, api.Name, err)
+		reqLogger.Error(err, "Failed to reconcile DeploymentConfig")
 	}
 
 	// Reconcile Service object
-	err = reconcileService(api)
+	err = reconcileService(client, api)
 	if err != nil {
-		log.Errorf("[%s] API: %s Failed to reconcile Service %v", api.Namespace, api.Name, err)
+		log.Error(err, "Failed to reconcile Service")
 	}
 
 	// Reconcile Route object
 	if api.Spec.Expose {
-		err = reconcileRoute(api)
+		err = reconcileRoute(client, api)
 		if err != nil {
-			log.Errorf("[%s] API: %s Failed to reconcile Route %v", api.Namespace, api.Name, err)
+			log.Error(err, "Failed to reconcile Route")
 		}
 	}
 
 	return err
 }
 
-func reconcileDeploymentConfig(api *v1alpha1.API) (err error) {
+func namespacedName(meta v1.Object) types.NamespacedName {
+	return types.NamespacedName{
+		Name:      meta.GetName(),
+		Namespace: meta.GetNamespace(),
+	}
+}
+
+func reconcileDeploymentConfig(client client.Client, api *v1alpha1.API) (err error) {
 
 	existingDc, err := DeploymentConfig(api)
 	if err != nil {
-		log.Errorf(err.Error())
+		log.Error(err, "Failed to reconcile DeploymentConfig")
 		return err
 	}
 
 	desiredDc, err := DeploymentConfig(api)
 	if err != nil {
-		log.Errorf(err.Error())
 		return err
 	}
 
-	err = sdk.Get(existingDc)
+	err = client.Get(context.TODO(), namespacedName(existingDc), existingDc)
+
 	if err != nil {
-		err = sdk.Create(desiredDc)
+		err = client.Create(context.TODO(), desiredDc)
+		log.Info("Creating DeploymentConfig", "Error", err)
 	} else {
 		if !reflect.DeepEqual(existingDc.Spec, desiredDc.Spec) {
 			existingDc.Spec = desiredDc.Spec
-			err = sdk.Update(existingDc)
+			err = client.Update(context.TODO(), existingDc)
+			log.Info("Updating DeploymentConfig", "Error", err)
 		}
 	}
 
 	return err
 }
 
-func reconcileService(api *v1alpha1.API) (err error) {
+func reconcileService(client client.Client, api *v1alpha1.API) (err error) {
 
 	existingSvc := Service(api)
 	desiredSvc := Service(api)
 
-	err = sdk.Get(existingSvc)
+	err = client.Get(context.TODO(), namespacedName(existingSvc), existingSvc)
 	if err != nil {
-		err = sdk.Create(desiredSvc)
+		err = client.Create(context.TODO(), desiredSvc)
 	} else {
 		if !reflect.DeepEqual(existingSvc.Spec.Ports, desiredSvc.Spec.Ports) {
 			existingSvc.Spec.Ports = desiredSvc.Spec.Ports
-			err = sdk.Update(existingSvc)
+			err = client.Update(context.TODO(), existingSvc)
 		}
 	}
 	return err
 
 }
 
-func reconcileRoute(api *v1alpha1.API) (err error) {
+func reconcileRoute(client client.Client, api *v1alpha1.API) (err error) {
 
 	existingRoute := Route(api)
 	desiredRoute := Route(api)
 
-	err = sdk.Get(existingRoute)
+	err = client.Get(context.TODO(), namespacedName(existingRoute), existingRoute)
 	if err != nil {
-		err = sdk.Create(desiredRoute)
+		err = client.Create(context.TODO(), desiredRoute)
 	} else {
 
 		if !reflect.DeepEqual(existingRoute.Spec, desiredRoute.Spec) {
 			existingRoute.Spec = desiredRoute.Spec
-			err = sdk.Update(existingRoute)
+			err = client.Update(context.TODO(), existingRoute)
 		}
 	}
 

@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
-	log "github.com/sirupsen/logrus"
 )
 
 const rateLimitPolicyName = "apicast.policy.rate_limit"
@@ -83,7 +82,7 @@ func toLeakyBucket(rl v1alpha1.RateLimit) (LeakyBucketRateLimiter, error) {
 	}
 
 	if rl.Burst == nil || *rl.Burst < 0 {
-		log.Infof("setting 'burst' value for %s to 0", rl.Name)
+		log.Info("setting 'burst' value for %s to 0", rl.Name)
 	} else {
 		burst = *rl.Burst
 	}
@@ -100,13 +99,13 @@ func toConnectionBased(rl v1alpha1.RateLimit) (ConnectionRateLimiter, error) {
 	conn = *rl.Conn
 
 	if rl.Burst == nil || *rl.Burst < 0 {
-		log.Infof("setting 'burst' value for %s to 0", rl.Name)
+		log.Info("setting 'burst' value for %s to 0", rl.Name)
 	} else {
 		burst = *rl.Burst
 	}
 
 	if rl.Delay == nil || *rl.Delay < 0 {
-		log.Infof("setting 'delay' value for %s to 0", rl.Name)
+		log.Info("setting 'delay' value for %s to 0", rl.Name)
 	} else {
 		delay = *rl.Delay
 	}

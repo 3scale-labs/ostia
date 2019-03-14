@@ -3,6 +3,8 @@ jobs:
   build:
     docker:
       - image: circleci/golang:1.10
+        environment:
+          OPERATOR_SDK_VERSION: 0.5.0
     working_directory: /go/src/github.com/3scale/ostia
     steps:
 
@@ -14,20 +16,22 @@ jobs:
 
       - restore_cache:
           keys:
-            - v1-gopkg-cache-{{ arch }}-{{ checksum "ostia-operator/Gopkg.lock" }}
-            - v1-gopkg-cache-{{ arch }}-{{ .Branch }}
+            - v1-ostia-vendor-{{ arch }}-sdk-0.5.0-{{ checksum "ostia-operator/Gopkg.lock" }}
+            - v1-ostia-vendor-{{ arch }}-sdk-0.5.0-{{ .Branch }}
       - run:
           name: Install dependencies
           working_directory: ostia-operator
           command: |
             curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+            curl -L https://github.com/operator-framework/operator-sdk/releases/download/v${OPERATOR_SDK_VERSION}/operator-sdk-v${OPERATOR_SDK_VERSION}-x86_64-linux-gnu -o /go/bin/operator-sdk
+            chmod +x /go/bin/operator-sdk
 
-            dep ensure -v
-            go install ./vendor/github.com/operator-framework/operator-sdk/commands/operator-sdk
+            dep check || dep ensure -v
 
       - save_cache:
-          key: v1-gopkg-cache-{{ arch }}-{{ checksum "ostia-operator/Gopkg.lock" }}
+          key: v1-ostia-vendor-{{ arch }}-sdk-0.5.0-{{ checksum "ostia-operator/Gopkg.lock" }}
           paths:
+            - "/go/src/github.com/3scale/ostia/ostia-operator/vendor"
             - "/go/pkg"
 
       - run:
@@ -47,9 +51,7 @@ jobs:
           command: |
             mkdir -p /tmp/ostia-reqs/image /tmp/ostia-reqs/deploy /tmp/ostia-reqs/test
             docker save -o /tmp/ostia-reqs/image/image.tar 172.30.1.1:5000/openshift/ostia-operator:test
-            cp -r ostia-operator/deploy/ /tmp/ostia-reqs/
-            cp -r ostia-operator/test/ /tmp/ostia-reqs/
-            cp ostia-operator/Makefile /tmp/ostia-reqs/Makefile
+            cp -vr ostia-operator/{deploy,test,Makefile} /tmp/ostia-reqs/
 
       - persist_to_workspace:
           root: /tmp/ostia-reqs
@@ -62,6 +64,8 @@ jobs:
   test:
     machine: true
     working_directory: /tmp
+    environment:
+      IMAGE: 172.30.1.1:5000/openshift/ostia-operator:test
     steps:
 
       - attach_workspace:
@@ -70,8 +74,9 @@ jobs:
       - run:
           name: Install OpenShift Client Tools
           command: |
-            wget https://github.com/openshift/origin/releases/download/v3.9.0/openshift-origin-client-tools-v3.9.0-191fece-linux-64bit.tar.gz
-            tar xzf /tmp/openshift*.tar.gz && sudo mv /tmp/openshift-origin-client-tools-v3.9.0-191fece-linux-64bit/oc /usr/local/bin/
+            curl -L https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz \
+            | tar --strip-components=1 -xz -C .
+            sudo mv -v oc kubectl /usr/local/bin/
 
       - run:
           name: Configure Docker
@@ -83,9 +88,12 @@ jobs:
           name: Start and Configure OpenShift Cluster
           working_directory: /tmp/ostia-reqs/test
           command: |
-            echo "export OPENSHIFT_IP=$(ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')" >> $BASH_ENV
+            # echo "export OPENSHIFT_IP=$(ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')" >> $BASH_ENV
+            echo "export OPENSHIFT_IP=127.0.0.1" >> $BASH_ENV
             source $BASH_ENV
-            oc cluster up --public-hostname=${OPENSHIFT_IP:=127.0.0.1}
+            oc cluster up \
+              --public-hostname=${OPENSHIFT_IP} \
+              --enable='*' --enable=-centos-imagestreams --enable=-sample-templates
             oc login -u system:admin --insecure-skip-tls-verify=true > /dev/null
             oc adm policy add-cluster-role-to-user cluster-admin developer > /dev/null
             oc login -u developer --insecure-skip-tls-verify=true > /dev/null
@@ -97,18 +105,13 @@ jobs:
             docker load -i image.tar
             source /tmp/ostia-reqs/test/tests/common/common.sh; wait_for_pod_ready deploymentconfig docker-registry default
             docker login -u developer -p $(oc whoami -t) 172.30.1.1:5000
-            docker push 172.30.1.1:5000/openshift/ostia-operator:test
-
-      - run:
-          name: Patch Operator definition
-          working_directory: /tmp/ostia-reqs/deploy
-          command: sed -i -e 's/Always/IfNotPresent/g' operator.yaml
+            docker push "${IMAGE}"
 
       - run:
           name: Run integration tests
           working_directory: /tmp/ostia-reqs/
           command: |
-            make integration OPENSHIFT_PUBLIC_HOSTNAME=${OPENSHIFT_IP}.nip.io
+            make integration OPENSHIFT_PUBLIC_HOSTNAME="${OPENSHIFT_IP}.nip.io" IMAGE="${IMAGE}"
 
 
 workflows:

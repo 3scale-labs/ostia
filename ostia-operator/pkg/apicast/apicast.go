@@ -9,12 +9,15 @@ import (
 	"github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
 	openshiftv1 "github.com/openshift/api/apps/v1"
 	routev1 "github.com/openshift/api/route/v1"
-	log "github.com/sirupsen/logrus"
 
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
+
+var log = logf.Log.WithName("apicast")
 
 const (
 	defaultApicastImage   = "quay.io/3scale/apicast"
@@ -204,7 +207,7 @@ func createConfig(api *v1alpha1.API) (string, error) {
 	config = string(b)
 
 	if err != nil {
-		log.Errorf("Failed to serialize object %v", err)
+		log.Error(err, "Failed to serialize object")
 	}
 
 	return string(config), nil

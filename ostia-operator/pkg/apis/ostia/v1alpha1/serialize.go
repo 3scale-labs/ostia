@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func (hc headerBasedCondition) MarshalJSON() ([]byte, error) {
+func (hc HeaderBasedCondition) MarshalJSON() ([]byte, error) {
 	var op string
 	if hc.Header == "" || hc.Value == "" {
 		return nil, errors.New("header and header value required for header based condition")
@@ -34,7 +34,7 @@ func (hc headerBasedCondition) MarshalJSON() ([]byte, error) {
 	return b, nil
 }
 
-func (mc methodBasedCondition) MarshalJSON() ([]byte, error) {
+func (mc MethodBasedCondition) MarshalJSON() ([]byte, error) {
 	op, err := parseOp(mc.Operation)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (mc methodBasedCondition) MarshalJSON() ([]byte, error) {
 	return b, nil
 }
 
-func (pc pathBasedCondition) MarshalJSON() ([]byte, error) {
+func (pc PathBasedCondition) MarshalJSON() ([]byte, error) {
 	var op string
 	condition := make(map[string]string)
 
@@ -143,19 +143,19 @@ func (c *Condition) setOperations(b json.RawMessage) error {
 		conditionErr := errors.New("unknown condition")
 
 		if _, ok := condition["header"]; ok {
-			var h headerBasedCondition
+			var h HeaderBasedCondition
 			conditionErr = json.Unmarshal(op, &h)
-			c.Operations = append(c.Operations, h)
+			c.Operations = append(c.Operations, &h)
 
 		} else if _, ok := condition["http_method"]; ok {
-			var hm methodBasedCondition
+			var hm MethodBasedCondition
 			conditionErr = json.Unmarshal(op, &hm)
-			c.Operations = append(c.Operations, hm)
+			c.Operations = append(c.Operations, &hm)
 
 		} else if _, ok := condition["request_path"]; ok {
-			var rp pathBasedCondition
+			var rp PathBasedCondition
 			conditionErr = json.Unmarshal(op, &rp)
-			c.Operations = append(c.Operations, rp)
+			c.Operations = append(c.Operations, &rp)
 
 		}
 

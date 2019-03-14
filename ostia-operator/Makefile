@@ -1,7 +1,9 @@
 NAME=ostia-operator
 NAMESPACE=quay.io/3scale
 VERSION := v0.1
-IMAGE := $(NAMESPACE)/$(NAME):$(VERSION)
+IMAGE ?= $(NAMESPACE)/$(NAME):$(VERSION)
+
+.PHONY: all build generate test bash push unit integration clean_integration
 
 all: generate build
 
@@ -23,7 +25,7 @@ unit:
 	go test ./...
 
 integration: clean_integration
-	cd test && ./integration.sh ${OPENSHIFT_PUBLIC_HOSTNAME}
+	cd test && IMAGE="$(IMAGE)" ./integration.sh ${OPENSHIFT_PUBLIC_HOSTNAME}
 
 clean_integration: SHELL:=/bin/bash
 clean_integration:
