@@ -45,7 +45,7 @@ func testAPIControllerDeploymentCreate(t *testing.T) {
 	// Register operator types with the runtime scheme.
 	s := scheme.Scheme
 	s.AddKnownTypes(ostiav1alpha1.SchemeGroupVersion, api)
-	routev1.Install(s)
+	routev1.AddToScheme(s)
 
 	// Create a fake client to mock API calls.
 	cl := fake.NewFakeClientWithScheme(s, objs...)

@@ -17,8 +17,8 @@ func init() {
 
 func registerOpenShiftAPIGroups(builder runtime.SchemeBuilder) runtime.SchemeBuilder {
 	return append(builder,
-		appsv1.Install,
-		imagev1.Install,
-		routev1.Install,
+		appsv1.AddToScheme,
+		imagev1.AddToScheme,
+		routev1.AddToScheme,
 	)
 }
