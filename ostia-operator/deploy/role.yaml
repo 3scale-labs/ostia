@@ -4,49 +4,36 @@ metadata:
   creationTimestamp: null
   name: ostia-operator
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  - services
-  - endpoints
-  - persistentvolumeclaims
-  - events
-  - configmaps
-  - secrets
-  verbs:
-  - '*'
-- apiGroups:
-  - ""
-  resources:
-  - namespaces
-  verbs:
-  - get
-- apiGroups:
-    - apps.openshift.io
-  resources:
-    - deploymentconfigs
-    - deploymentconfigs/scale
-    - deploymentconfigs/status
-  verbs:
-    - "*"
-- apiGroups:
-    - route.openshift.io
-  resources:
-    - routes
-    - routes/custom-host
-  verbs:
-    - "*"
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - servicemonitors
-  verbs:
-  - get
-  - create
-- apiGroups:
-  - ostia.3scale.net
-  resources:
-  - '*'
-  verbs:
-  - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - services
+      - endpoints
+      - persistentvolumeclaims
+      - events
+      - configmaps
+      - secrets
+      - ingress
+      - deployment
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+  - apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - servicemonitors
+    verbs:
+      - get
+      - create
+  - apiGroups:
+      - ostia.3scale.net
+    resources:
+      - '*'
+    verbs:
+      - '*'

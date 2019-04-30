@@ -1,6 +1,6 @@
 NAME=ostia-operator
 NAMESPACE=quay.io/3scale
-VERSION := v0.1
+VERSION := v0.2-kube
 IMAGE ?= $(NAMESPACE)/$(NAME):$(VERSION)
 
 .PHONY: all build generate test bash push unit integration clean_integration

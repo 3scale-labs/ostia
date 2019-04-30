@@ -3,16 +3,14 @@ package apicast
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
-	"os"
-
 	"github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
-	openshiftv1 "github.com/openshift/api/apps/v1"
-	routev1 "github.com/openshift/api/route/v1"
-
+	"k8s.io/api/apps/v1beta2"
 	"k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"net/url"
+	"os"
 
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
@@ -31,38 +29,37 @@ func labelsForAPIcast(name string) map[string]string {
 	return map[string]string{"app": "apicast", "apiRef": name}
 }
 
-// DeploymentConfig returns an openshift deploymentConfig object for APIcast
-func DeploymentConfig(api *v1alpha1.API) (*openshiftv1.DeploymentConfig, error) {
+func Deployment(api *v1alpha1.API) (*v1beta2.Deployment, error) {
 	apicastLabels := labelsForAPIcast(api.Name)
 	apicastConfig, err := createConfig(api)
 	if err != nil {
 		return nil, err
 	}
 	apicastName := apicastName(api)
-
-	deploymentConfig := &openshiftv1.DeploymentConfig{
+	numReplicas := int32(1)
+	deployment := &v1beta2.Deployment{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "apps.openshift.io/v1",
-			Kind:       "DeploymentConfig",
+			APIVersion: "apps/v1",
+			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      apicastName,
 			Namespace: api.Namespace,
 			Labels:    apicastLabels,
 		},
-		Spec: openshiftv1.DeploymentConfigSpec{
-			Replicas: 1,
-			Selector: map[string]string{
-				"deploymentconfig": apicastName,
+		Spec: v1beta2.DeploymentSpec{
+			Replicas: &numReplicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"deployment": apicastName,
+					"app":        "apicast",
+				},
 			},
-			Strategy: openshiftv1.DeploymentStrategy{
-				Type: openshiftv1.DeploymentStrategyTypeRolling,
-			},
-			Template: &v1.PodTemplateSpec{
+			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"deploymentconfig": apicastName,
-						"app":              "apicast",
+						"deployment": apicastName,
+						"app":        "apicast",
 					},
 				},
 				Spec: v1.PodSpec{
@@ -85,10 +82,14 @@ func DeploymentConfig(api *v1alpha1.API) (*openshiftv1.DeploymentConfig, error) 
 					},
 				},
 			},
+			Strategy: v1beta2.DeploymentStrategy{
+				Type: v1beta2.RollingUpdateDeploymentStrategyType,
+			},
 		},
 	}
-	addOwnerRefToObject(deploymentConfig, asOwner(api))
-	return deploymentConfig, nil
+
+	addOwnerRefToObject(deployment, asOwner(api))
+	return deployment, nil
 }
 
 // Service returns a k8s service object for APIcast
@@ -113,7 +114,7 @@ func Service(api *v1alpha1.API) *v1.Service {
 				{Name: "management", Port: 8090, Protocol: "TCP", TargetPort: intstr.FromInt(8090)},
 			},
 			Selector: map[string]string{
-				"deploymentconfig": apicastName,
+				"deployment": apicastName,
 			},
 		},
 	}
@@ -123,41 +124,30 @@ func Service(api *v1alpha1.API) *v1.Service {
 
 }
 
-// Route returns an openshift Route object for APIcast
-func Route(api *v1alpha1.API) *routev1.Route {
-
+func Ingress(api *v1alpha1.API) *v1beta1.Ingress {
 	APIcastLabels := labelsForAPIcast(api.Name)
 	apicastName := apicastName(api)
 
-	route := &routev1.Route{
+	ingress := &v1beta1.Ingress{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "route.openshift.io/v1",
-			Kind:       "Route",
+			Kind:       "extensions/v1beta1",
+			APIVersion: "Ingress",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      apicastName,
 			Namespace: api.Namespace,
 			Labels:    APIcastLabels,
 		},
-		Spec: routev1.RouteSpec{
-			Host: api.Spec.Hostname,
-			To: routev1.RouteTargetReference{
-				Kind: "Service",
-				Name: apicastName,
-			},
-			Port: &routev1.RoutePort{
-				TargetPort: intstr.FromString("proxy"),
-			},
-			TLS: &routev1.TLSConfig{
-				Termination:                   routev1.TLSTerminationEdge,
-				InsecureEdgeTerminationPolicy: routev1.InsecureEdgeTerminationPolicyAllow,
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: apicastName,
+				ServicePort: intstr.FromString("proxy"),
 			},
 		},
 	}
 
-	addOwnerRefToObject(route, asOwner(api))
-	return route
-
+	addOwnerRefToObject(ingress, asOwner(api))
+	return ingress
 }
 
 //createConfig returns an APIcast Configuration Object

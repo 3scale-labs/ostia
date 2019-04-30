@@ -16,10 +16,10 @@ spec:
       containers:
         - name: ostia-operator
           # Replace this with the built image name
-          image: REPLACE_IMAGE
+          image: quay.io/3scale/ostia-operator:v0.2-kube
           command:
-          - ostia-operator
-          - --zap-devel
+            - ostia-operator
+            - --zap-devel
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE

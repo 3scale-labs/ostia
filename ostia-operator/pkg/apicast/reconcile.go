@@ -32,7 +32,7 @@ func Reconcile(client client.Client, request reconcile.Request) (err error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 
 	// Reconcile DeploymentConfig object
-	err = reconcileDeploymentConfig(client, api)
+	err = reconcileDeployment(client, api)
 	if err != nil {
 		reqLogger.Error(err, "Failed to reconcile DeploymentConfig")
 	}
@@ -45,7 +45,7 @@ func Reconcile(client client.Client, request reconcile.Request) (err error) {
 
 	// Reconcile Route object
 	if api.Spec.Expose {
-		err = reconcileRoute(client, api)
+		err = reconcileIngress(client, api)
 		if err != nil {
 			log.Error(err, "Failed to reconcile Route")
 		}
@@ -61,15 +61,15 @@ func namespacedName(meta v1.Object) types.NamespacedName {
 	}
 }
 
-func reconcileDeploymentConfig(client client.Client, api *v1alpha1.API) (err error) {
+func reconcileDeployment(client client.Client, api *v1alpha1.API) (err error) {
 
-	existingDc, err := DeploymentConfig(api)
+	existingDc, err := Deployment(api)
 	if err != nil {
 		log.Error(err, "Failed to reconcile DeploymentConfig")
 		return err
 	}
 
-	desiredDc, err := DeploymentConfig(api)
+	desiredDc, err := Deployment(api)
 	if err != nil {
 		return err
 	}
@@ -108,19 +108,19 @@ func reconcileService(client client.Client, api *v1alpha1.API) (err error) {
 
 }
 
-func reconcileRoute(client client.Client, api *v1alpha1.API) (err error) {
+func reconcileIngress(client client.Client, api *v1alpha1.API) (err error) {
 
-	existingRoute := Route(api)
-	desiredRoute := Route(api)
+	existingIngress := Ingress(api)
+	desiredIngress := Ingress(api)
 
-	err = client.Get(context.TODO(), namespacedName(existingRoute), existingRoute)
+	err = client.Get(context.TODO(), namespacedName(existingIngress), existingIngress)
 	if err != nil {
-		err = client.Create(context.TODO(), desiredRoute)
+		err = client.Create(context.TODO(), desiredIngress)
 	} else {
 
-		if !reflect.DeepEqual(existingRoute.Spec, desiredRoute.Spec) {
-			existingRoute.Spec = desiredRoute.Spec
-			err = client.Update(context.TODO(), existingRoute)
+		if !reflect.DeepEqual(existingIngress.Spec, desiredIngress.Spec) {
+			existingIngress.Spec = desiredIngress.Spec
+			err = client.Update(context.TODO(), existingIngress)
 		}
 	}
 
