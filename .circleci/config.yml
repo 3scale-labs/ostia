@@ -2,9 +2,9 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.12.4
         environment:
-          OPERATOR_SDK_VERSION: 0.5.0
+          OPERATOR_SDK_VERSION: 0.7.0
     working_directory: /go/src/github.com/3scale/ostia
     steps:
 
@@ -16,8 +16,8 @@ jobs:
 
       - restore_cache:
           keys:
-            - v1-ostia-vendor-{{ arch }}-sdk-0.5.0-{{ checksum "ostia-operator/Gopkg.lock" }}
-            - v1-ostia-vendor-{{ arch }}-sdk-0.5.0-{{ .Branch }}
+            - v1-ostia-vendor-{{ arch }}-sdk-0.7.0-{{ checksum "ostia-operator/Gopkg.lock" }}
+            - v1-ostia-vendor-{{ arch }}-sdk-0.7.0-{{ .Branch }}
       - run:
           name: Install dependencies
           working_directory: ostia-operator
@@ -29,7 +29,7 @@ jobs:
             dep check || dep ensure -v
 
       - save_cache:
-          key: v1-ostia-vendor-{{ arch }}-sdk-0.5.0-{{ checksum "ostia-operator/Gopkg.lock" }}
+          key: v1-ostia-vendor-{{ arch }}-sdk-0.7.0-{{ checksum "ostia-operator/Gopkg.lock" }}
           paths:
             - "/go/src/github.com/3scale/ostia/ostia-operator/vendor"
             - "/go/pkg"
