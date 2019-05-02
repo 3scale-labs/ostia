@@ -41,10 +41,14 @@ oc create -f ostia-operator/deploy/cr.yaml -n my-hello-api
 ## Build
 
 * Prerequisites:
-  * Go >= 1.10
+  * Go
   * Go Dep (<https://github.com/golang/dep>)
-  * Operator-SDK v0.0.5 (<https://github.com/operator-framework/operator-sdk>)
+  * Operator-SDK (<https://github.com/operator-framework/operator-sdk>)
   * Docker
+
+* Using homebrew (macOS)
+
+Run `brew bundle` in the project root to install all dependencies by homebrew.
 
 * Installing Go:
 
