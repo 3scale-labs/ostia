@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
+	ostia "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	appsv1 "github.com/openshift/api/apps/v1"
@@ -11,7 +11,7 @@ import (
 
 func init() {
 	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
-	AddToSchemes = append(AddToSchemes, v1alpha1.SchemeBuilder.AddToScheme)
+	AddToSchemes = append(AddToSchemes, ostia.SchemeBuilder.AddToScheme)
 	AddToSchemes = registerOpenShiftAPIGroups(AddToSchemes)
 }
 

@@ -1,4 +1,4 @@
-package apicast
+package standalone
 
 import (
 	"encoding/json"
@@ -9,20 +9,20 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
+	ostia "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
 )
 
 func TestProcessRateLimits(t *testing.T) {
-	policyFromRlJson := func(rlCrd []byte) (PolicyChain, error) {
-		var rl v1alpha1.RateLimit
+	policyFromRlJson := func(rlCrd []byte) (Policy, error) {
+		var rl ostia.RateLimit
 		err := json.Unmarshal(rlCrd, &rl)
 		if err != nil {
 			t.Fatalf("error unmarshalling rate limit crd snippet to RateLimit struct - %s", err)
 		}
-		return processRateLimitPolicies([]v1alpha1.RateLimit{rl})
+		return processRateLimitPolicies([]ostia.RateLimit{rl})
 	}
 
-	apiCastConfigFromPolicy := func(pc PolicyChain) []byte {
+	apiCastConfigFromPolicy := func(pc Policy) []byte {
 		conf, err := json.Marshal(pc)
 		if err != nil {
 			t.Fatalf("error unmarshalling apicast config")
@@ -75,7 +75,7 @@ func TestProcessRateLimits(t *testing.T) {
 		} else if err != nil {
 			t.Errorf("unexpected error")
 		}
-		converted := *result.Configuration.FixedWindowLimiters
+		converted := *result.Configuration.(RateLimitPolicyConfiguration).FixedWindowLimiters
 		equals(t, input.expect, converted[0])
 
 		if !strings.Contains(string(apiCastConfigFromPolicy(result)), input.shouldContain) {
@@ -124,7 +124,7 @@ func TestProcessRateLimits(t *testing.T) {
 		} else if err != nil {
 			t.Errorf("unexpected error")
 		}
-		converted := *result.Configuration.LeakyBucketLimiters
+		converted := *result.Configuration.(RateLimitPolicyConfiguration).LeakyBucketLimiters
 		equals(t, input.expect, converted[0])
 
 		if !strings.Contains(string(apiCastConfigFromPolicy(result)), input.shouldContain) {
@@ -172,7 +172,7 @@ func TestProcessRateLimits(t *testing.T) {
 		} else if err != nil {
 			t.Errorf("unexpected error")
 		}
-		converted := *result.Configuration.ConnectionLimiters
+		converted := *result.Configuration.(RateLimitPolicyConfiguration).ConnectionLimiters
 		equals(t, input.expect, converted[0])
 
 		if !strings.Contains(string(apiCastConfigFromPolicy(result)), input.shouldContain) {

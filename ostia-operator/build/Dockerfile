@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi7-dev-preview/ubi-minimal:7.6
+FROM registry.access.redhat.com/ubi8/ubi-minimal
 
 ENV OPERATOR=/usr/local/bin/ostia-operator \
     USER_UID=1001 \
