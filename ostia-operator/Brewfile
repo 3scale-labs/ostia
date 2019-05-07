@@ -1,0 +1,2 @@
+brew 'operator-sdk'
+brew 'dep'
