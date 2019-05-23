@@ -9,6 +9,7 @@ executors:
       - image: circleci/golang:1.12.5
         environment:
           OPERATOR_SDK_VERSION: 0.8.1
+          GOFLAGS: --mod=vendor
     working_directory: /go/src/github.com/3scale/ostia
 
 commands:
@@ -21,7 +22,7 @@ commands:
             sudo chown -vf circleci:circleci /go/{src,bin}
       - restore_cache:
           keys:
-            - v2-ostia-vendor-{{ arch }}-sdk-0.8.1-{{ checksum "ostia-operator/Gopkg.lock" }}
+            - v2-ostia-vendor-{{ arch }}-sdk-0.8.1-{{ checksum "ostia-operator/go.sum" }}
             - v2-ostia-vendor-{{ arch }}-sdk-0.8.1-{{ .Branch }}
 
   attach-workspace:
@@ -47,14 +48,13 @@ jobs:
           name: Install dependencies
           working_directory: ostia-operator
           command: |
-            which dep || (curl --fail -L https://raw.githubusercontent.com/golang/dep/master/install.sh | sh)
             which operator-sdk || (curl --fail -L https://github.com/operator-framework/operator-sdk/releases/download/v${OPERATOR_SDK_VERSION}/operator-sdk-v${OPERATOR_SDK_VERSION}-x86_64-linux-gnu -o /go/bin/operator-sdk; chmod +x /go/bin/operator-sdk)
 
-            dep check || dep ensure -v
+            make vendor
 
             go version | cut -d' ' -f 3 > /go/version
       - save_cache:
-          key: v2-ostia-vendor-{{ arch }}-sdk-0.8.1-{{ checksum "ostia-operator/Gopkg.lock" }}
+          key: v2-ostia-vendor-{{ arch }}-sdk-0.8.1-{{ checksum "ostia-operator/go.sum" }}
           paths:
             - "/go/src/github.com/3scale/ostia/ostia-operator/vendor"
             - "/go/pkg"
