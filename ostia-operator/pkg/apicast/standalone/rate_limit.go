@@ -1,17 +1,17 @@
-package apicast
+package standalone
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
 
-	"github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
+	ostia "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
 )
 
 const rateLimitPolicyName = "apicast.policy.rate_limit"
 
-func processRateLimitPolicies(limits []v1alpha1.RateLimit) (PolicyChain, error) {
-	var pc PolicyChain
+func processRateLimitPolicies(limits []ostia.RateLimit) (Policy, error) {
+	var policy Policy
 	var fixedLimiters []FixedWindowRateLimiter
 	var leakyLimiters []LeakyBucketRateLimiter
 	var connLimiters []ConnectionRateLimiter
@@ -21,27 +21,27 @@ func processRateLimitPolicies(limits []v1alpha1.RateLimit) (PolicyChain, error) 
 		case "FixedWindow":
 			fw, err := toFixedWindow(limit)
 			if err != nil {
-				return pc, err
+				return policy, err
 			}
 			fixedLimiters = append(fixedLimiters, fw)
 		case "LeakyBucket":
 			lb, err := toLeakyBucket(limit)
 			if err != nil {
-				return pc, err
+				return policy, err
 			}
 			leakyLimiters = append(leakyLimiters, lb)
 		case "ConnectionBased":
 			cb, err := toConnectionBased(limit)
 			if err != nil {
-				return pc, err
+				return policy, err
 			}
 			connLimiters = append(connLimiters, cb)
 		default:
-			return pc, fmt.Errorf("missing or unknown 'type' field on %s rate limit definition", limit.Name)
+			return policy, fmt.Errorf("missing or unknown 'type' field on %s rate limit definition", limit.Name)
 		}
 	}
 
-	var config PolicyChainConfiguration
+	var config RateLimitPolicyConfiguration
 	if len(fixedLimiters) > 0 {
 		config.FixedWindowLimiters = &fixedLimiters
 	}
@@ -52,12 +52,13 @@ func processRateLimitPolicies(limits []v1alpha1.RateLimit) (PolicyChain, error) 
 		config.ConnectionLimiters = &connLimiters
 	}
 
-	pc.Name = rateLimitPolicyName
-	pc.Configuration = config
-	return pc, nil
+	policy.Name = rateLimitPolicyName
+	policy.Configuration = config
+
+	return policy, nil
 }
 
-func toFixedWindow(rl v1alpha1.RateLimit) (FixedWindowRateLimiter, error) {
+func toFixedWindow(rl ostia.RateLimit) (FixedWindowRateLimiter, error) {
 	count, window, err := parseTimeLimits(rl)
 	if err != nil {
 		return FixedWindowRateLimiter{}, err
@@ -73,7 +74,7 @@ func toFixedWindow(rl v1alpha1.RateLimit) (FixedWindowRateLimiter, error) {
 	return fw, nil
 }
 
-func toLeakyBucket(rl v1alpha1.RateLimit) (LeakyBucketRateLimiter, error) {
+func toLeakyBucket(rl ostia.RateLimit) (LeakyBucketRateLimiter, error) {
 	var burst int
 
 	rate, seconds, err := parseTimeLimits(rl)
@@ -90,7 +91,7 @@ func toLeakyBucket(rl v1alpha1.RateLimit) (LeakyBucketRateLimiter, error) {
 	return LeakyBucketRateLimiter{burst, rl.Conditions, parseLimiterKey(rl), rate / seconds}, nil
 }
 
-func toConnectionBased(rl v1alpha1.RateLimit) (ConnectionRateLimiter, error) {
+func toConnectionBased(rl ostia.RateLimit) (ConnectionRateLimiter, error) {
 	var burst, conn, delay int
 
 	if rl.Conn == nil || *rl.Conn < 1 {
@@ -113,7 +114,7 @@ func toConnectionBased(rl v1alpha1.RateLimit) (ConnectionRateLimiter, error) {
 	return ConnectionRateLimiter{burst, rl.Conditions, conn, delay, parseLimiterKey(rl)}, nil
 }
 
-func parseTimeLimits(rl v1alpha1.RateLimit) (int, int, error) {
+func parseTimeLimits(rl ostia.RateLimit) (int, int, error) {
 	var requests, seconds int
 	if rl.Limit == "" {
 		return requests, seconds, fmt.Errorf("required property 'limit' missing from rate limit %s", rl.Limit)
@@ -140,7 +141,7 @@ func parseTimeLimits(rl v1alpha1.RateLimit) (int, int, error) {
 	return requests, seconds, nil
 }
 
-func parseLimiterKey(rl v1alpha1.RateLimit) LimiterKey {
+func parseLimiterKey(rl ostia.RateLimit) LimiterKey {
 	key := LimiterKey{rl.Name, "plain", "service"}
 	if rl.Source != "" {
 		key.Name = rl.Source

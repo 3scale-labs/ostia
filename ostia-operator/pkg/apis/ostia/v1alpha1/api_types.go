@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -9,15 +10,47 @@ import (
 
 // APISpec Contains the Spec of the API object
 type APISpec struct {
-	Expose     bool        `json:"expose"` //TODO: Make expose readonly after creation
-	Hostname   string      `json:"hostname"`
-	Endpoints  []Endpoint  `json:"endpoints"`
-	RateLimits []RateLimit `json:"rate_limits,omitempty"`
+	Expose   bool   `json:"expose"` //TODO: Make expose readonly after creation
+	Hostname string `json:"hostname"`
+	// +patchMergeKey=name
+	// +patchStrategy=merge,retainKeys
+	Endpoints []Endpoint `json:"endpoints" patchStrategy:"merge" patchMergeKey:"name"`
+	// +patchMergeKey=name
+	// +patchStrategy=merge,retainKeys
+	RateLimits []RateLimit `json:"rate_limits,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
 }
+
+type APIConditionType string
 
 // APIStatus Contains the Status of the API object
 type APIStatus struct { //TODO: Make this struct not user editable
 	Deployed bool `json:"deployed"`
+
+	// ObservedGeneration reflects the generation of the most recently observed ReplicaSet.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
+	// Represents the latest available observations of a replica set's current state.
+	// +optional
+	// +patchMergeKey=type
+	// +patchStrategy=merge
+	Conditions []APICondition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
+}
+
+type APICondition struct {
+	// Type of replica set condition.
+	Type APIConditionType `json:"type"`
+	// Status of the condition, one of True, False, Unknown.
+	Status corev1.ConditionStatus `json:"status"`
+	// The last time the condition transitioned from one status to another.
+	// +optional
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	// The reason for the condition's last transition.
+	// +optional
+	Reason string `json:"reason,omitempty"`
+	// A human readable message indicating details about the transition.
+	// +optional
+	Message string `json:"message,omitempty"`
 }
 
 // Endpoint is a struct used to define the different upstream services

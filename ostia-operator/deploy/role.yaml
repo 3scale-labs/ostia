@@ -23,6 +23,26 @@ rules:
   verbs:
   - get
 - apiGroups:
+    - extensions
+  resources:
+    - ingresses
+  verbs:
+    - list
+    - get
+    - create
+    - update
+    - delete
+    - watch
+- apiGroups:
+    - "apps"
+  resources:
+    - deployments
+    - deployments/scale
+    - deployments/status
+    - replicasets
+  verbs:
+    - "*"
+- apiGroups:
     - apps.openshift.io
   resources:
     - deploymentconfigs

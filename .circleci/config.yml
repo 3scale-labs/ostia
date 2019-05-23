@@ -1,124 +1,155 @@
-version: 2
-jobs:
-  build:
+version: 2.1
+
+orbs:
+  openshift: redhat-3scale/okd@dev:latest
+
+executors:
+  go:
     docker:
-      - image: circleci/golang:1.12.4
+      - image: circleci/golang:1.12.5
         environment:
-          OPERATOR_SDK_VERSION: 0.7.0
+          OPERATOR_SDK_VERSION: 0.8.1
     working_directory: /go/src/github.com/3scale/ostia
+
+commands:
+  restore-cache:
+    description: "Restore cache"
     steps:
-
-      - setup_remote_docker:
-          reusable: true
-          exclusive: false
-
-      - checkout
-
+      - run:
+          name: "Fix /go/bin permissions"
+          command: |
+            sudo chown -vf circleci:circleci /go/{src,bin}
       - restore_cache:
           keys:
-            - v1-ostia-vendor-{{ arch }}-sdk-0.7.0-{{ checksum "ostia-operator/Gopkg.lock" }}
-            - v1-ostia-vendor-{{ arch }}-sdk-0.7.0-{{ .Branch }}
+            - v2-ostia-vendor-{{ arch }}-sdk-0.8.1-{{ checksum "ostia-operator/Gopkg.lock" }}
+            - v2-ostia-vendor-{{ arch }}-sdk-0.8.1-{{ .Branch }}
+
+  attach-workspace:
+    steps:
+      - run:
+          name: Preparing workspace directory
+          command: |
+            sudo rm -rf /go
+            sudo mkdir -p /go
+            sudo chown -vf circleci:circleci /go
+          working_directory: /
+      - attach_workspace:
+          at: /go
+
+jobs:
+
+  install:
+    executor: go
+    steps:
+      - checkout
+      - restore-cache
       - run:
           name: Install dependencies
           working_directory: ostia-operator
           command: |
-            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-            curl -L https://github.com/operator-framework/operator-sdk/releases/download/v${OPERATOR_SDK_VERSION}/operator-sdk-v${OPERATOR_SDK_VERSION}-x86_64-linux-gnu -o /go/bin/operator-sdk
-            chmod +x /go/bin/operator-sdk
+            which dep || (curl --fail -L https://raw.githubusercontent.com/golang/dep/master/install.sh | sh)
+            which operator-sdk || (curl --fail -L https://github.com/operator-framework/operator-sdk/releases/download/v${OPERATOR_SDK_VERSION}/operator-sdk-v${OPERATOR_SDK_VERSION}-x86_64-linux-gnu -o /go/bin/operator-sdk; chmod +x /go/bin/operator-sdk)
 
             dep check || dep ensure -v
 
+            go version | cut -d' ' -f 3 > /go/version
       - save_cache:
-          key: v1-ostia-vendor-{{ arch }}-sdk-0.7.0-{{ checksum "ostia-operator/Gopkg.lock" }}
+          key: v2-ostia-vendor-{{ arch }}-sdk-0.8.1-{{ checksum "ostia-operator/Gopkg.lock" }}
           paths:
             - "/go/src/github.com/3scale/ostia/ostia-operator/vendor"
             - "/go/pkg"
+            - "/go/bin"
+            - "/go/version"
+      - persist_to_workspace:
+          root: /go
+          paths:
+            - bin
+            - src
+            - version
 
+  test:
+    executor: go
+    steps:
+      - attach-workspace
+      - run:
+          name: Run unit tests
+          working_directory: ostia-operator
+          command: |
+            make unit
+
+  build:
+    executor: go
+    steps:
+      - attach-workspace
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
           name: Build ostia-operator
           working_directory: ostia-operator
           command: |
               make build NAMESPACE=172.30.1.1:5000/openshift VERSION=test
-
-      - run:
-          name: Run unit tests
-          working_directory: ostia-operator
-          command: |
-              make unit
-
       - run:
           name: Sharing requirements to downstream job
           command: |
-            mkdir -p /tmp/ostia-reqs/image /tmp/ostia-reqs/deploy /tmp/ostia-reqs/test
-            docker save -o /tmp/ostia-reqs/image/image.tar 172.30.1.1:5000/openshift/ostia-operator:test
-            cp -vr ostia-operator/{deploy,test,Makefile} /tmp/ostia-reqs/
+            mkdir -p /go/tmp/
+            docker save -o /go/tmp/ostia-image.tar 172.30.1.1:5000/openshift/ostia-operator:test
 
       - persist_to_workspace:
-          root: /tmp/ostia-reqs
+          root: /go
           paths:
-            - Makefile
-            - deploy
-            - image
-            - test
+            - tmp
 
-  test:
-    machine: true
-    working_directory: /tmp
+  e2e:
+    executor: openshift/machine
+    working_directory: /go/src/github.com/3scale/ostia
     environment:
       IMAGE: 172.30.1.1:5000/openshift/ostia-operator:test
+      GOROOT: /usr/local/go
     steps:
-
-      - attach_workspace:
-          at: /tmp/ostia-reqs
+      - attach-workspace
 
       - run:
-          name: Install OpenShift Client Tools
+          name: "Install go"
+          working_directory: /tmp
           command: |
-            curl -L https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz \
-            | tar --strip-components=1 -xz -C .
-            sudo mv -v oc kubectl /usr/local/bin/
+            export VERSION=$(cat /go/version)
+            sudo rm -vrf "$GOROOT"
+            sudo mkdir -vp "$GOROOT"
+            curl --fail -L https://dl.google.com/go/${VERSION}.linux-amd64.tar.gz | sudo tar -xzv --strip-components=1 -C "$GOROOT"
 
-      - run:
-          name: Configure Docker
-          command: |
-            echo '{"insecure-registries": ["172.30.0.0/16"]}' | sudo tee --append /etc/docker/daemon.json
-            sudo service docker restart
-
-      - run:
-          name: Start and Configure OpenShift Cluster
-          working_directory: /tmp/ostia-reqs/test
-          command: |
-            # echo "export OPENSHIFT_IP=$(ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')" >> $BASH_ENV
-            echo "export OPENSHIFT_IP=127.0.0.1" >> $BASH_ENV
-            source $BASH_ENV
-            oc cluster up \
-              --public-hostname=${OPENSHIFT_IP} \
-              --enable='*' --enable=-centos-imagestreams --enable=-sample-templates
-            oc login -u system:admin --insecure-skip-tls-verify=true > /dev/null
-            oc adm policy add-cluster-role-to-user cluster-admin developer > /dev/null
-            oc login -u developer --insecure-skip-tls-verify=true > /dev/null
-
+      - openshift/install:
+          router_reload_interval: 1
+          router_log_level: debug
+      - openshift/observe
       - run:
           name: Unpack and push ostia-operator to internal registry
-          working_directory: /tmp/ostia-reqs/image
           command: |
-            docker load -i image.tar
-            source /tmp/ostia-reqs/test/tests/common/common.sh; wait_for_pod_ready deploymentconfig docker-registry default
-            docker login -u developer -p $(oc whoami -t) 172.30.1.1:5000
+            docker load -i ostia-image.tar
+            oc whoami -t | docker login --username developer --password-stdin 172.30.1.1:5000
             docker push "${IMAGE}"
+            docker tag "${IMAGE}" quay.io/3scale/ostia-operator:latest
+          working_directory: /go/tmp
 
       - run:
-          name: Run integration tests
-          working_directory: /tmp/ostia-reqs/
+          name: Run operator-sdk e2e tests
+          working_directory: ostia-operator
           command: |
-            make integration OPENSHIFT_PUBLIC_HOSTNAME="${OPENSHIFT_IP}.nip.io" IMAGE="${IMAGE}"
+            export PATH="/go/bin:$PATH" GOPATH=/go
+            make e2e IMAGE="${IMAGE}"
 
+      - openshift/status
 
 workflows:
   version: 2
   build_and_test_integration:
     jobs:
-      - build
+      - install
       - test:
+          requires:
+            - install
+      - build:
+          requires:
+            - install
+      - e2e:
           requires:
             - build
