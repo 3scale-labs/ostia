@@ -6,9 +6,9 @@ orbs:
 executors:
   go:
     docker:
-      - image: circleci/golang:1.12.4
+      - image: circleci/golang:1.12.5
         environment:
-          OPERATOR_SDK_VERSION: 0.7.0
+          OPERATOR_SDK_VERSION: 0.8.1
     working_directory: /go/src/github.com/3scale/ostia
 
 commands:
@@ -21,8 +21,8 @@ commands:
             sudo chown -vf circleci:circleci /go/{src,bin}
       - restore_cache:
           keys:
-            - v2-ostia-vendor-{{ arch }}-sdk-0.7.0-{{ checksum "ostia-operator/Gopkg.lock" }}
-            - v2-ostia-vendor-{{ arch }}-sdk-0.7.0-{{ .Branch }}
+            - v2-ostia-vendor-{{ arch }}-sdk-0.8.1-{{ checksum "ostia-operator/Gopkg.lock" }}
+            - v2-ostia-vendor-{{ arch }}-sdk-0.8.1-{{ .Branch }}
 
   attach-workspace:
     steps:
@@ -54,7 +54,7 @@ jobs:
 
             go version | cut -d' ' -f 3 > /go/version
       - save_cache:
-          key: v2-ostia-vendor-{{ arch }}-sdk-0.7.0-{{ checksum "ostia-operator/Gopkg.lock" }}
+          key: v2-ostia-vendor-{{ arch }}-sdk-0.8.1-{{ checksum "ostia-operator/Gopkg.lock" }}
           paths:
             - "/go/src/github.com/3scale/ostia/ostia-operator/vendor"
             - "/go/pkg"
