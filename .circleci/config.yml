@@ -6,7 +6,7 @@ orbs:
 executors:
   go:
     docker:
-      - image: circleci/golang:1.12.4
+      - image: circleci/golang:1.12.5
         environment:
           OPERATOR_SDK_VERSION: 0.8.1
     working_directory: /go/src/github.com/3scale/ostia
