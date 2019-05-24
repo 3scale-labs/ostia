@@ -7,6 +7,8 @@ IMAGE ?= $(NAMESPACE)/$(NAME):$(VERSION)
 
 .PHONY: all build generate test bash push unit integration clean_integration
 
+export GO111MODULE=on
+
 all: generate build
 
 generate: ## Generate k8s resources
@@ -22,6 +24,10 @@ bash: ## Start a container with bash
 
 push: ## Push to container registry
 	docker push $(IMAGE)
+
+vendor: vendor/modules.txt
+vendor/modules.txt: go.sum
+	go mod vendor -v
 
 unit: ## Run unit tests
 	go test ./...
