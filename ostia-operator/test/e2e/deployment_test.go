@@ -9,7 +9,9 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"net"
 	"net/http"
+	"net/url"
 	"testing"
 	"time"
 
@@ -36,6 +38,7 @@ func TestAPI(t *testing.T) {
 			APIVersion: "ostia.3scale.net/v1alpha1",
 		},
 	}
+
 	err := framework.AddToFrameworkScheme(apis.AddToScheme, apiList)
 	if err != nil {
 		t.Fatalf("failed to add custom resource scheme to framework: %v", err)
@@ -329,10 +332,25 @@ func testDeploy(t *testing.T) {
 	makeHttpRequests(t, host, "/test", 1, 200)
 }
 
+func extractIP(clusterURL string) string {
+	url, err := url.Parse(clusterURL)
+	if err != nil {
+		return "127.0.0.1"
+	}
+	ips, err := net.LookupIP(url.Hostname())
+	if err != nil {
+		return "127.0.0.1"
+	}
+	return ips[0].String()
+}
+
 func genHostname(t *testing.T, ctx *framework.TestCtx, name string) string {
 	ns := getNamespace(t, ctx)
 
-	return fmt.Sprintf("%s.%s.lvh.me", name, ns)
+	clusterURL := framework.Global.KubeConfig.Host
+	ip := extractIP(clusterURL)
+
+	return fmt.Sprintf("%s.%s.%s.nip.io", name, ns, ip)
 }
 
 func testReconcile(t *testing.T) {
