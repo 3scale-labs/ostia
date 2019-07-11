@@ -1,0 +1,9 @@
+apiVersion: ostia.3scale.net/v2alpha1
+kind: Server
+metadata:
+  name: testapi
+  labels: 
+    api: testapi
+spec:
+  rewriteHost: "echo-api.3scale.net"
+  url: "http://echo-api.3scale.net:80" 

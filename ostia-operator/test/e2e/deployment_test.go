@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/3scale/ostia/ostia-operator/pkg/apis"
-	operator "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
+	operator "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v2alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	dynclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -24,18 +24,18 @@ import (
 )
 
 var (
-	retryInterval        = time.Second * 5
-	timeout              = time.Second * 60
+	retryInterval        = time.Second * 10
+	timeout              = time.Second * 120
 	cleanupRetryInterval = time.Second * 1
 	cleanupTimeout       = time.Second * 5
-	routerReload         = time.Second * 2
+	routerReload         = time.Second * 10
 )
 
 func TestAPI(t *testing.T) {
 	apiList := &operator.APIList{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "API",
-			APIVersion: "ostia.3scale.net/v1alpha1",
+			APIVersion: "ostia.3scale.net/v2alpha1",
 		},
 	}
 
@@ -47,7 +47,6 @@ func TestAPI(t *testing.T) {
 	t.Run("api-group", func(t *testing.T) {
 		t.Run("Deploy", testDeploy)
 		t.Run("Deploy2", testDeploy)
-		t.Run("FixedRateLimit", testFixedRateLimit)
 		t.Run("Reconcile", testReconcile)
 	})
 }
@@ -62,7 +61,7 @@ func deployAPISpec(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 	API := &operator.API{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "API",
-			APIVersion: "ostia.3scale.net/v1alpha1",
+			APIVersion: "ostia.3scale.net/v2alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -101,7 +100,7 @@ func deployAPISpec(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 		return err
 	}
 
-	err = waitForDeployment(t, f, API)
+	err = waitForDeployment(t, f, fmt.Sprintf("apicast-%s", API.Name), API.Namespace)
 
 	if err != nil {
 		return err
@@ -112,9 +111,68 @@ func deployAPISpec(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 	return nil
 }
 
-func waitForDeployment(t *testing.T, f *framework.Framework, API *operator.API) error {
-	name := fmt.Sprintf("apicast-%s", API.ObjectMeta.Name)
-	namespace := API.ObjectMeta.Namespace
+func deployOperation(operationName string, namespace string, labels map[string]string, operationSpec operator.OperationSpec, f *framework.Framework) error {
+	operation := operator.Operation{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Operation",
+			APIVersion: "ostia.3scale.net/v2alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      operationName,
+			Namespace: namespace,
+		},
+	}
+
+	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Name: operationName, Namespace: namespace}, &operation)
+
+	operation.ObjectMeta.Labels = labels
+	operation.Spec = operationSpec
+	if err != nil {
+		err := f.Client.Create(goctx.TODO(), &operation, nil)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := f.Client.Update(goctx.TODO(), &operation)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+
+}
+
+func deployServer(serverName string, namespace string, labels map[string]string, serverSpec operator.ServerSpec, f *framework.Framework) error {
+	server := operator.Server{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Server",
+			APIVersion: "ostia.3scale.net/v2alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      serverName,
+			Namespace: namespace,
+		},}
+	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Name: serverName, Namespace: namespace}, &server)
+
+	server.ObjectMeta.Labels = labels
+	server.Spec = serverSpec
+	if err != nil {
+		err := f.Client.Create(goctx.TODO(), &server, nil)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := f.Client.Update(goctx.TODO(), &server)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func waitForDeployment(t *testing.T, f *framework.Framework, name, namespace string) error {
 	objectKey := types.NamespacedName{Name: name, Namespace: namespace}
 
 	err := wait.Poll(retryInterval, timeout, func() (done bool, err error) {
@@ -139,6 +197,7 @@ func waitForDeployment(t *testing.T, f *framework.Framework, API *operator.API) 
 
 		if status.Replicas == status.ReadyReplicas && status.Replicas == status.UpdatedReplicas && status.Replicas == *deployment.Spec.Replicas {
 			t.Logf("Deployment has correct number of replicas: %d\n", status.Replicas)
+			time.Sleep(routerReload)
 			return true, nil
 		}
 
@@ -280,49 +339,52 @@ func makeHttpRequests(t *testing.T, host string, path string, count int, status 
 	}
 }
 
-func testFixedRateLimit(t *testing.T) {
-	ctx := framework.NewTestCtx(t)
-	f := framework.Global
-	initCtx(t, f, ctx)
-	defer ctx.Cleanup()
-
-	var spec = operator.APISpec{
-		Expose:   true,
-		Hostname: genHostname(t, ctx, "rate-limited"),
-		Endpoints: []operator.Endpoint{
-			{
-				Name: "hello",
-				Host: "https://echo-api.3scale.net",
-				Path: "/hello",
-			},
-		},
-		RateLimits: []operator.RateLimit{
-			{Type: "FixedWindow", Name: "fixed", Limit: "10/m"},
-		},
-	}
-
-	deployAPI(t, f, ctx, spec, "rate-limited")
-	host := getHost(t, f, ctx, "rate-limited")
-
-	makeHttpRequests(t, host, "/hello", 10, 200)
-	makeHttpRequests(t, host, "/hello", 10, 429)
-}
-
 func testDeploy(t *testing.T) {
 	ctx := framework.NewTestCtx(t)
 	f := framework.Global
 	initCtx(t, f, ctx)
+	namespace, err := ctx.GetNamespace()
+	if err != nil {
+		panic(err)
+	}
 	defer ctx.Cleanup()
 
+	labels := map[string]string{"api": namespace}
+
+	serverName := "echo-api-server"
+	url := "http://echo-api.3scale.net:80"
+	serverSpec := operator.ServerSpec{
+		URL: &url,
+	}
+
+	err = deployServer(serverName, namespace, labels, serverSpec, f)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	routeName := "root-test"
+	operationSpec := operator.OperationSpec{
+		ID:        "root-test",
+		Path:      "/test",
+		Method:    "GET",
+		Priority:  nil,
+		ServerRef: "echo-api-server",
+	}
+
+	err = deployOperation(routeName, namespace, labels, operationSpec, f)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	var spec = operator.APISpec{
-		Expose:   true,
 		Hostname: genHostname(t, ctx, "test"),
-		Endpoints: []operator.Endpoint{
-			{
-				Name: "hello",
-				Host: "https://echo-api.3scale.net",
-				Path: "/test",
-			},
+		Expose:   true,
+		ServerSelector: metav1.LabelSelector{
+			MatchLabels: map[string]string{"api": namespace},
+		},
+		OperationSelector: metav1.LabelSelector{
+			MatchLabels: map[string]string{"api": namespace},
 		},
 	}
 
@@ -357,16 +419,49 @@ func testReconcile(t *testing.T) {
 	ctx := framework.NewTestCtx(t)
 	f := framework.Global
 	initCtx(t, f, ctx)
+	namespace, err := ctx.GetNamespace()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	labels := map[string]string{"api": namespace}
+
+	serverName := "echo-api-server"
+	url := "http://echo-api.3scale.net:80"
+
+	serverSpec := operator.ServerSpec{
+		URL: &url,
+	}
+
+	err = deployServer(serverName, namespace, labels, serverSpec, f)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	routeName := "root-test"
+	operationSpec := operator.OperationSpec{
+		ID:        "root-test",
+		Path:      "/test",
+		Method:    "GET",
+		Priority:  nil,
+		ServerRef: "echo-api-server",
+	}
+
+	err = deployOperation(routeName, namespace, labels, operationSpec, f)
+
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	var spec = operator.APISpec{
-		Expose:   true,
 		Hostname: genHostname(t, ctx, "test"),
-		Endpoints: []operator.Endpoint{
-			{
-				Name: "hello",
-				Host: "https://echo-api.3scale.net",
-				Path: "/test",
-			},
+		Expose:   true,
+		ServerSelector: metav1.LabelSelector{
+			MatchLabels: map[string]string{"api": namespace},
+		},
+		OperationSelector: metav1.LabelSelector{
+			MatchLabels: map[string]string{"api": namespace},
 		},
 	}
 
@@ -375,14 +470,18 @@ func testReconcile(t *testing.T) {
 
 	makeHttpRequests(t, host, "/test", 1, 200)
 
-	spec.Endpoints = []operator.Endpoint{
-		{
-			Name: "hello",
-			Host: "https://echo-api.3scale.net",
-			Path: "/hello",
-		},
+	operationSpec.Path = "/hello"
+
+	err = deployOperation(routeName, namespace, labels, operationSpec, f)
+	if err != nil {
+		t.Fatal(err)
 	}
-	deployAPI(t, f, ctx, spec, "test")
+
+	err = waitForDeployment(t, f, "apicast-test", namespace)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	host = getHost(t, f, ctx, "test")
 	makeHttpRequests(t, host, "/hello", 1, 200)
 }

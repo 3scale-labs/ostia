@@ -4,12 +4,18 @@ metadata:
   name: apis.ostia.3scale.net
 spec:
   group: ostia.3scale.net
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: false
+    - name: v2alpha1
+      served: true
+      storage: true
   names:
     kind: API
     listKind: APIList
     plural: apis
     singular: api
   scope: Namespaced
-  version: v1alpha1
   subresources:
     status: {}

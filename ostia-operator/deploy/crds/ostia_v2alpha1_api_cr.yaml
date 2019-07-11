@@ -1,0 +1,13 @@
+apiVersion: ostia.3scale.net/v2alpha1
+kind: API
+metadata:
+  name: testapi
+spec:
+  expose: true
+  hostname: test.127.0.0.1.nip.io
+  serverSelector:
+    matchLabels:
+      api: testapi
+  operationSelector:
+    matchLabels:
+      api: testapi

@@ -6,11 +6,14 @@ import (
 	"strings"
 
 	ostia "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
+
+var log = logf.Log.WithName("apicast")
 
 const rateLimitPolicyName = "apicast.policy.rate_limit"
 
-func processRateLimitPolicies(limits []ostia.RateLimit) (Policy, error) {
+func ProcessRateLimitPolicies(limits []ostia.RateLimit) (Policy, error) {
 	var policy Policy
 	var fixedLimiters []FixedWindowRateLimiter
 	var leakyLimiters []LeakyBucketRateLimiter

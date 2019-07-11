@@ -1,7 +1,7 @@
 package apis
 
 import (
-	ostia "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
+	ostia "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v2alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	appsv1 "github.com/openshift/api/apps/v1"

@@ -1,0 +1,18 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: operations.ostia.3scale.net
+spec:
+  group: ostia.3scale.net
+  versions:
+    - name: v2alpha1
+      served: true
+      storage: true
+  names:
+    kind: Operation
+    listKind: OperationList
+    plural: operations
+    singular: operation
+  scope: Namespaced
+  subresources:
+    status: {}

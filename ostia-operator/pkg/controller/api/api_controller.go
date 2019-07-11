@@ -1,9 +1,12 @@
 package api
 
 import (
+	"context"
 	"github.com/3scale/ostia/ostia-operator/pkg/apicast"
-	ostiav1alpha1 "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
+	ostiav2alpha1 "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v2alpha1"
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,6 +31,21 @@ func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
 }
 
+type NoAPITrigger func(handler.MapObject) []reconcile.Request
+
+func (r NoAPITrigger) Map(o handler.MapObject) []reconcile.Request {
+	return r(o)
+}
+
+var NoAPITriggerFunc NoAPITrigger = func(o handler.MapObject) []reconcile.Request {
+	return []reconcile.Request{
+		{NamespacedName: types.NamespacedName{
+			Namespace: o.Meta.GetNamespace(),
+			Name:      "_NoAPI",
+		}},
+	}
+}
+
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileAPI{client: mgr.GetClient(), scheme: mgr.GetScheme()}
@@ -40,23 +58,27 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	if err != nil {
 		return err
 	}
-
 	// Watch for changes to primary resource API
-	err = c.Watch(&source.Kind{Type: &ostiav1alpha1.API{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &ostiav2alpha1.API{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner API
+	err = c.Watch(&source.Kind{Type: &ostiav2alpha1.Operation{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: NoAPITriggerFunc})
+	if err != nil {
+		return err
+	}
+	err = c.Watch(&source.Kind{Type: &ostiav2alpha1.Server{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: NoAPITriggerFunc})
+	if err != nil {
+		return err
+	}
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &ostiav1alpha1.API{},
+		OwnerType:    &ostiav2alpha1.API{},
 	})
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -72,17 +94,45 @@ type ReconcileAPI struct {
 
 // Reconcile reads that state of the cluster for a API object and makes changes based on the state read
 // and what is in the API.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
-// a Pod as an example
-// Note:
-// The Controller will requeue the Request to be processed again if the returned error is non-nil or
-// Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling API")
 
-	err := apicast.Reconcile(r.client, request)
+	// If the request comes from a watched event that's not an API object,
+	// we should check all the API objects in that namespace to be sure there
+	// are no changes required. Kind of hack to avoid the complexity and
+	// traversing multiple OwnerReferences...
+	if request.Name == "_NoAPI" {
+		opts := client.ListOptions{}
+		opts.InNamespace(request.Namespace)
+		APIList := &ostiav2alpha1.APIList{}
+		err := r.client.List(context.TODO(), &opts, APIList)
+		if err != nil {
+			reqLogger.Error(err, "error")
+			return reconcile.Result{}, nil
+		}
 
+		for _, api := range APIList.Items {
+			err := apicast.Reconcile(r.client, &api)
+			if err != nil {
+				reqLogger.Error(err, "error")
+			}
+		}
+
+		return reconcile.Result{}, nil
+	}
+
+	api := &ostiav2alpha1.API{}
+
+	err := r.client.Get(context.TODO(), request.NamespacedName, api)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+
+	err = apicast.Reconcile(r.client, api)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

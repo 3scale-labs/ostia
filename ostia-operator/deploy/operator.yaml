@@ -20,7 +20,7 @@ spec:
           command:
           - ostia-operator
           - --zap-devel
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
               valueFrom:

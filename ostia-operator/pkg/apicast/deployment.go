@@ -3,22 +3,18 @@ package apicast
 import (
 	"fmt"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	ostia "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
+	ostia "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v2alpha1"
 	extensions "k8s.io/api/extensions/v1beta1"
 
-	"github.com/3scale/ostia/ostia-operator/pkg/apicast/standalone"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	b64 "encoding/base64"
-
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
-
-var log = logf.Log.WithName("apicast")
 
 const (
 	defaultApicastImage   = "quay.io/3scale/apicast"
@@ -37,9 +33,9 @@ func toDataURI(mime string, str []byte) string {
 }
 
 // DeploymentConfig returns an openshift deploymentConfig object for APIcast
-func DeploymentConfig(api *ostia.API) (*appsv1.Deployment, error) {
+func DeploymentConfig(client client.Client, api *ostia.API) (*appsv1.Deployment, error) {
 	apicastLabels := labelsForAPIcast(api.Name)
-	apicastConfig, err := standalone.CreateConfig(api)
+	apicastConfig, err := createConfig(api, client)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +82,7 @@ func DeploymentConfig(api *ostia.API) (*appsv1.Deployment, error) {
 								{Name: "APICAST_CONFIGURATION", Value: toDataURI("application/json", apicastConfig)},
 							},
 							LivenessProbe:  newHTTPProbe("/status/live", 8090, 10, 5, 10),
-							ReadinessProbe: newTCPProbe(8080, 15, 5, 30), // standalone management API does not support this
+							ReadinessProbe: newTCPProbe(8080, 15, 5, 10), // standalone management API does not support this
 						},
 					},
 				},

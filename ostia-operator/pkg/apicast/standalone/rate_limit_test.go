@@ -19,7 +19,7 @@ func TestProcessRateLimits(t *testing.T) {
 		if err != nil {
 			t.Fatalf("error unmarshalling rate limit crd snippet to RateLimit struct - %s", err)
 		}
-		return processRateLimitPolicies([]ostia.RateLimit{rl})
+		return ProcessRateLimitPolicies([]ostia.RateLimit{rl})
 	}
 
 	apiCastConfigFromPolicy := func(pc Policy) []byte {

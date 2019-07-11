@@ -2,34 +2,22 @@ package apicast
 
 import (
 	"context"
-	ostiav1alpha1 "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	ostia "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v2alpha1"
+	v1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	ostia "github.com/3scale/ostia/ostia-operator/pkg/apis/ostia/v1alpha1"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-//Reconcile takes care of the main apicast reconciliation loop
-func Reconcile(client client.Client, request reconcile.Request) (err error) {
-	// Fetch the API instance
-	api := &ostiav1alpha1.API{}
+var log = logf.Log.WithName("apicast")
 
-	err = client.Get(context.TODO(), request.NamespacedName, api)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
-			return nil
-		}
-		// Error reading the object - requeue the request.
-		return err
-	}
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+func Reconcile(client client.Client, api *ostia.API) error {
+
+	var err error
+
+	reqLogger := log.WithValues("API.Namespace", api.Namespace, "API.Name", api.Name)
 
 	if api.Generation != api.Status.ObservedGeneration {
 		status := ostia.APIStatus{}
@@ -39,7 +27,7 @@ func Reconcile(client client.Client, request reconcile.Request) (err error) {
 			{Type: "Ready", Status: "false"},
 		}
 
-		if err = client.Status().Update(context.TODO(), api); err != nil {
+		if err := client.Status().Update(context.TODO(), api); err != nil {
 			return err
 		}
 	}
@@ -64,7 +52,7 @@ func Reconcile(client client.Client, request reconcile.Request) (err error) {
 		}
 	}
 
-	err = updateStatus(client, api)
+	err = api.UpdateStatus(client)
 
 	if err != nil {
 		log.Error(err, "Failed to update API Status")
@@ -73,45 +61,15 @@ func Reconcile(client client.Client, request reconcile.Request) (err error) {
 	return err
 }
 
-func updateStatus(client client.Client, api *ostia.API) (err error) {
-	expectedStatus := *api.Status.DeepCopy()
-	expectedStatus.Deployed = true
-	expectedStatus.ObservedGeneration = api.Generation
-	expectedStatus.Conditions = []ostia.APICondition{
-		{Type: "Ready", Status: "true"},
-	}
-
-	if !reflect.DeepEqual(expectedStatus, api.Status) {
-		log.Info("API Status does not match", "Expected", expectedStatus, "Actual", api.Status)
-
-		api.Status = expectedStatus
-
-		if err = client.Status().Update(context.TODO(), api); err != nil {
-			return err
-		}
-
-		log.Info("Updated API Status", "APIStatus", expectedStatus)
-	}
-
-	return nil
-}
-
-func namespacedName(meta v1.Object) types.NamespacedName {
-	return types.NamespacedName{
-		Name:      meta.GetName(),
-		Namespace: meta.GetNamespace(),
-	}
-}
-
 func reconcileDeploymentConfig(client client.Client, api *ostia.API) (err error) {
-	existingDc, err := DeploymentConfig(api)
+	existingDc, err := DeploymentConfig(client, api)
 
 	if err != nil {
 		log.Error(err, "Failed to reconcile Deployment")
 		return err
 	}
 
-	desiredDc, err := DeploymentConfig(api)
+	desiredDc, err := DeploymentConfig(client, api)
 	if err != nil {
 		return err
 	}
@@ -122,7 +80,8 @@ func reconcileDeploymentConfig(client client.Client, api *ostia.API) (err error)
 		err = client.Create(context.TODO(), desiredDc)
 		log.Info("Creating Deployment", "Error", err)
 	} else {
-		if !reflect.DeepEqual(existingDc.Spec, desiredDc.Spec) {
+
+		if !compareDeployment(existingDc, desiredDc) {
 			existingDc.Spec = desiredDc.Spec
 			err = client.Update(context.TODO(), existingDc)
 			log.Info("Updating Deployment", "Error", err)
@@ -130,6 +89,32 @@ func reconcileDeploymentConfig(client client.Client, api *ostia.API) (err error)
 	}
 
 	return err
+}
+
+func namespacedName(meta metav1.Object) types.NamespacedName {
+	return types.NamespacedName{
+		Name:      meta.GetName(),
+		Namespace: meta.GetNamespace(),
+	}
+}
+
+func compareDeployment(existing, desired *v1.Deployment) bool {
+
+	if len(existing.Spec.Template.Spec.Containers) != len(desired.Spec.Template.Spec.Containers) {
+		return false
+	}
+
+	if len(existing.Spec.Template.Spec.Containers) > 0 {
+		if !reflect.DeepEqual(existing.Spec.Template.Spec.Containers[0].Env, desired.Spec.Template.Spec.Containers[0].Env) {
+			return false
+		}
+		if existing.Spec.Template.Spec.Containers[0].Image != desired.Spec.Template.Spec.Containers[0].Image {
+			return false
+		}
+	} else {
+		return false
+	}
+	return true
 }
 
 func reconcileService(client client.Client, api *ostia.API) (err error) {
