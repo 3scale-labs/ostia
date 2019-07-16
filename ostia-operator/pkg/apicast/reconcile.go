@@ -53,12 +53,11 @@ func Reconcile(client client.Client, api *ostia.API) error {
 	}
 
 	err = api.UpdateStatus(client)
-
 	if err != nil {
 		log.Error(err, "Failed to update API Status")
 	}
 
-	return err
+	return nil
 }
 
 func reconcileDeploymentConfig(client client.Client, api *ostia.API) (err error) {
@@ -104,16 +103,14 @@ func compareDeployment(existing, desired *v1.Deployment) bool {
 		return false
 	}
 
-	if len(existing.Spec.Template.Spec.Containers) > 0 {
-		if !reflect.DeepEqual(existing.Spec.Template.Spec.Containers[0].Env, desired.Spec.Template.Spec.Containers[0].Env) {
-			return false
-		}
-		if existing.Spec.Template.Spec.Containers[0].Image != desired.Spec.Template.Spec.Containers[0].Image {
-			return false
-		}
-	} else {
+	if !reflect.DeepEqual(existing.Spec.Template.Spec.Containers[0].Env, desired.Spec.Template.Spec.Containers[0].Env) {
 		return false
 	}
+
+	if existing.Spec.Template.Spec.Containers[0].Image != desired.Spec.Template.Spec.Containers[0].Image {
+		return false
+	}
+
 	return true
 }
 

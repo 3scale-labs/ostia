@@ -65,13 +65,17 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	err = c.Watch(&source.Kind{Type: &ostiav2alpha1.Operation{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: NoAPITriggerFunc})
+
 	if err != nil {
 		return err
 	}
+
 	err = c.Watch(&source.Kind{Type: &ostiav2alpha1.Server{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: NoAPITriggerFunc})
+
 	if err != nil {
 		return err
 	}
+
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &ostiav2alpha1.API{},
