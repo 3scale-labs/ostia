@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"net"
 	"net/http"
@@ -47,6 +49,7 @@ func TestAPI(t *testing.T) {
 	t.Run("api-group", func(t *testing.T) {
 		t.Run("Deploy", testDeploy)
 		t.Run("Deploy2", testDeploy)
+		t.Run("DeployWithService", testDeployService)
 		t.Run("Reconcile", testReconcile)
 	})
 }
@@ -392,6 +395,134 @@ func testDeploy(t *testing.T) {
 	host := getHost(t, f, ctx, "test")
 
 	makeHttpRequests(t, host, "/test", 1, 200)
+}
+
+func testDeployService(t *testing.T) {
+	ctx := framework.NewTestCtx(t)
+	f := framework.Global
+	initCtx(t, f, ctx)
+	namespace, err := ctx.GetNamespace()
+	if err != nil {
+		panic(err)
+	}
+	defer ctx.Cleanup()
+
+	labels := map[string]string{"api": namespace}
+
+	serverName := "echo-api-server"
+	serviceName := "echo-api"
+	serviceTargetPort := "http"
+
+	echoservice := v1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      serviceName,
+			Namespace: namespace,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{
+				{
+					Name:     serviceTargetPort,
+					Protocol: "TCP",
+					Port:     9999,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.String,
+						StrVal: "http",
+					},
+				},
+			},
+			Selector: labels,
+		},
+	}
+
+	err = f.Client.Create(goctx.TODO(), &echoservice, &framework.CleanupOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	echopod := v1.Pod{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Pod",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "echo-api",
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{{
+				Name:    "echo-api",
+				Image:   "busybox",
+				Command: []string{"sh", "-c", "touch /tmp/index.html && httpd -f -p 9999 -h /tmp"},
+				Ports: []v1.ContainerPort{{
+					Name:          "http",
+					HostPort:      9999,
+					ContainerPort: 9999,
+					Protocol:      "TCP",
+				}},
+				ImagePullPolicy: "IfNotPresent",
+			}},
+		},
+	}
+
+	err = f.Client.Create(goctx.TODO(), &echopod, &framework.CleanupOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	serverSpec := operator.ServerSpec{
+		RewriteHost: "",
+		Default:     nil,
+		Service: &operator.ServerService{
+			Name:     serviceName,
+			BasePath: "/",
+			TargetPort: intstr.IntOrString{
+				Type:   intstr.String,
+				StrVal: serviceTargetPort,
+			},
+			TLS: false,
+		},
+	}
+
+	err = deployServer(serverName, namespace, labels, serverSpec, f)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	routeName := "root-test"
+	operationSpec := operator.OperationSpec{
+		ID:        "root-test",
+		Path:      "/",
+		Method:    "GET",
+		Priority:  nil,
+		ServerRef: serverName,
+	}
+
+	err = deployOperation(routeName, namespace, labels, operationSpec, f)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var spec = operator.APISpec{
+		Hostname: genHostname(t, ctx, "test"),
+		Expose:   true,
+		ServerSelector: metav1.LabelSelector{
+			MatchLabels: map[string]string{"api": namespace},
+		},
+		OperationSelector: metav1.LabelSelector{
+			MatchLabels: map[string]string{"api": namespace},
+		},
+	}
+
+	deployAPI(t, f, ctx, spec, "test")
+	host := getHost(t, f, ctx, "test")
+
+	makeHttpRequests(t, host, "/", 1, 200)
 }
 
 func extractIP(clusterURL string) string {

@@ -60,6 +60,7 @@ type APICondition struct {
 	Message string `json:"message,omitempty"`
 }
 
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // API is the Schema for the apis API

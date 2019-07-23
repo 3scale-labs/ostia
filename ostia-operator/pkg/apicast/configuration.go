@@ -17,10 +17,17 @@ func createConfig(api *ostia.API, client client.Client) ([]byte, error) {
 	}
 
 	for _, server := range serverList.Items {
+
+		upstream, err := server.GetUpstream(client)
+
+		if err != nil {
+			return []byte{}, err
+		}
+
 		s := standalone.Service{
 			Name:        server.Name,
 			PolicyChain: []standalone.Policy{},
-			Upstream:    *server.Spec.URL,
+			Upstream:    upstream.String(),
 		}
 		config.Services = append(config.Services, s)
 	}
