@@ -1,0 +1,8 @@
+task :generate do
+  sh 'grpc_tools_ruby_protoc -I../envoy-xds-grpc/googleapis -I../envoy-xds-grpc/data-plane-api -I../envoy-xds-grpc/protoc-gen-validate -I../envoy-xds-grpc/data-plane-api -I../envoy-xds-grpc/udpa @../envoy-xds-grpc/auth --ruby_out=.'
+end
+
+task default: :generate do
+  $LOAD_PATH << '.'
+  require_relative 'auth'
+end

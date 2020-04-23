@@ -1,0 +1,5 @@
+-I../envoy-xds-grpc/googleapis
+-I../envoy-xds-grpc/data-plane-api
+-I../envoy-xds-grpc/protoc-gen-validate
+-I../envoy-xds-grpc/data-plane-api
+-I../envoy-xds-grpc/udpa

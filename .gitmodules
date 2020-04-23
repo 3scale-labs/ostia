@@ -1,0 +1,12 @@
+[submodule "ostia-operator/envoy/envoy-xds-grpc/data-plane-api"]
+	path = ostia-operator/envoy/envoy-xds-grpc/data-plane-api
+	url = https://github.com/envoyproxy/data-plane-api.git
+[submodule "ostia-operator/envoy/envoy-xds-grpc/googleapis"]
+	path = ostia-operator/envoy/envoy-xds-grpc/googleapis
+	url = https://github.com/googleapis/googleapis.git
+[submodule "ostia-operator/envoy/envoy-xds-grpc/protoc-gen-validate"]
+	path = ostia-operator/envoy/envoy-xds-grpc/protoc-gen-validate
+	url = https://github.com/lyft/protoc-gen-validate.git
+[submodule "ostia-operator/envoy/envoy-xds-grpc/udpa"]
+	path = ostia-operator/envoy/envoy-xds-grpc/udpa
+	url = https://github.com/cncf/udpa.git

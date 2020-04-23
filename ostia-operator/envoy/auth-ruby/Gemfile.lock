@@ -1,0 +1,38 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    byebug (11.1.1)
+    coderay (1.1.2)
+    google-protobuf (3.11.4)
+    googleapis-common-protos-types (1.0.5)
+      google-protobuf (~> 3.11)
+    grpc (1.28.0)
+      google-protobuf (~> 3.11)
+      googleapis-common-protos-types (~> 1.0)
+    grpc-tools (1.28.0)
+    method_source (1.0.0)
+    pry (0.13.1)
+      coderay (~> 1.1)
+      method_source (~> 1.0)
+    pry-byebug (3.9.0)
+      byebug (~> 11.0)
+      pry (~> 0.13.0)
+    rack (2.2.2)
+    rack-auth (0.0.1)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  google-protobuf
+  grpc
+  grpc-tools
+  pry-byebug
+  rack
+  rack-auth
+
+RUBY VERSION
+   ruby 2.7.1p83
+
+BUNDLED WITH
+   2.1.4
