@@ -6,5 +6,18 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]] # Bin to run the rate-limit gRPC server
+name = "ratelimit-server"
+path = "src/server.rs"
+
 [dependencies]
 ttl_cache = "0.5.1"
+tonic = "0.2"
+prost = "0.6"
+prost-types = "0.6.1"
+tokio = { version = "0.2", features = ["macros"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.8"
+
+[build-dependencies]
+tonic-build = "0.2"

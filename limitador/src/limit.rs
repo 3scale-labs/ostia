@@ -1,7 +1,8 @@
+use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Clone, Deserialize)]
 pub struct Limit {
     namespace: String,
     max_value: i64,
