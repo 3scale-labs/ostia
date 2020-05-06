@@ -1,11 +1,13 @@
+use crate::envoy::service::ratelimit::v2::rate_limit_service_server::{
+    RateLimitService, RateLimitServiceServer,
+};
+use crate::envoy::service::ratelimit::v2::{RateLimitRequest, RateLimitResponse};
 use limitador::limit::Limit;
 use limitador::RateLimiter;
 use std::collections::HashMap;
 use std::env;
 use std::sync::{Arc, Mutex};
 use tonic::{transport::Server, Request, Response, Status};
-use crate::envoy::service::ratelimit::v2::rate_limit_service_server::{RateLimitService, RateLimitServiceServer};
-use crate::envoy::service::ratelimit::v2::{RateLimitRequest, RateLimitResponse};
 
 const LIMITS_FILE_ENV: &str = "LIMITS_FILE";
 
@@ -73,7 +75,7 @@ impl RateLimitService for MyRateLimiter {
             overall_code,
             statuses: vec![],
             headers: vec![],
-            request_headers_to_add: vec![]
+            request_headers_to_add: vec![],
         };
 
         Ok(Response::new(reply))
