@@ -51,14 +51,13 @@ impl Storage for InMemoryStorage {
             Some(value) => {
                 *value -= delta;
             }
-            None => match self.counters.insert(
-                counter.clone(),
-                counter.max_value() - 1,
-                Duration::from_secs(counter.seconds()),
-            ) {
-                Some(_) => (),
-                None => (),
-            },
+            None => {
+                self.counters.insert(
+                    counter.clone(),
+                    counter.max_value() - 1,
+                    Duration::from_secs(counter.seconds()),
+                );
+            }
         };
     }
 }

@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 
-#[derive(Eq, PartialEq, Debug, Clone, Deserialize)]
+#[derive(Eq, Debug, Clone, Deserialize)]
 pub struct Limit {
     namespace: String,
     max_value: i64,
@@ -55,7 +55,7 @@ impl Limit {
         let left_operand = split[0];
         let right_operand = split[1];
 
-        &values[left_operand] == right_operand
+        values[left_operand] == right_operand
     }
 }
 
@@ -78,6 +78,16 @@ impl Hash for Limit {
             .collect::<Vec<String>>()
             .sort()
             .hash(state);
+    }
+}
+
+impl PartialEq for Limit {
+    fn eq(&self, other: &Self) -> bool {
+        self.namespace == other.namespace
+            && self.max_value == other.max_value
+            && self.seconds == other.seconds
+            && self.conditions == other.conditions
+            && self.variables == other.variables
     }
 }
 

@@ -2,7 +2,7 @@ use crate::limit::Limit;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
-#[derive(Eq, PartialEq, Clone)]
+#[derive(Eq, Clone)]
 pub struct Counter {
     limit: Limit,
     set_variables: HashMap<String, String>,
@@ -37,5 +37,11 @@ impl Hash for Counter {
             .collect::<Vec<String>>()
             .sort()
             .hash(state);
+    }
+}
+
+impl PartialEq for Counter {
+    fn eq(&self, other: &Self) -> bool {
+        self.limit == other.limit && self.set_variables == other.set_variables
     }
 }

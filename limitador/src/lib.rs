@@ -77,13 +77,21 @@ impl RateLimiter {
     ) -> Result<(), MissingNamespaceErr> {
         match values.get("namespace") {
             // TODO: hardcoded delta
-            Some(namespace) => Ok(self
-                .get_limits(namespace)
-                .iter()
-                .filter(|lim| lim.applies(values))
-                .map(|lim| Counter::new(lim.clone(), values.clone()))
-                .for_each(|counter| self.storage.update_counter(&counter, 1))),
+            Some(namespace) => {
+                self.get_limits(namespace)
+                    .iter()
+                    .filter(|lim| lim.applies(values))
+                    .map(|lim| Counter::new(lim.clone(), values.clone()))
+                    .for_each(|counter| self.storage.update_counter(&counter, 1));
+                Ok(())
+            }
             None => Err(MissingNamespaceErr::new()),
         }
+    }
+}
+
+impl Default for RateLimiter {
+    fn default() -> Self {
+        Self::new()
     }
 }

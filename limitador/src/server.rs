@@ -34,8 +34,14 @@ impl MyRateLimiter {
 
                 rate_limiter
             }
-            Err(_e) => panic!("LIMITS_FILE env not set"),
+            _ => panic!("LIMITS_FILE env not set"),
         }
+    }
+}
+
+impl Default for MyRateLimiter {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -85,7 +91,7 @@ impl RateLimitService for MyRateLimiter {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = "0.0.0.0:50052".parse()?;
-    let rate_limiter = MyRateLimiter::new();
+    let rate_limiter = MyRateLimiter::default();
 
     Server::builder()
         .add_service(RateLimitServiceServer::new(rate_limiter))
