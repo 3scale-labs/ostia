@@ -92,7 +92,7 @@ static_resources:
             - endpoint:
                 address:
                   socket_address:
-                    address: host.docker.internal
+                    address: limitador
                     port_value: 50052
   - name: app
     connect_timeout: 0.25s

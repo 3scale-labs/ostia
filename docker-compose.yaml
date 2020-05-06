@@ -29,7 +29,7 @@ services:
     expose:
       - "8080"
 
-  auth:
+  ext-auth:
     build:
       context: auth-ruby
       dockerfile: Dockerfile
@@ -39,6 +39,17 @@ services:
           - auth
     expose:
       - "50051"
+
+  rate-limit:
+    build:
+      context: limitador
+      dockerfile: Dockerfile
+    networks:
+      envoymesh:
+        aliases:
+          - limitador
+    expose:
+      - "50052"
 
 
 networks:
