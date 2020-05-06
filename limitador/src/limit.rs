@@ -65,19 +65,23 @@ impl Hash for Limit {
         self.max_value.hash(state);
         self.seconds.hash(state);
 
-        self.conditions
+        let mut encoded_conditions = self
+            .conditions
             .iter()
             .map(|c| c.to_string())
-            .collect::<Vec<String>>()
-            .sort()
-            .hash(state);
+            .collect::<Vec<String>>();
 
-        self.variables
+        encoded_conditions.sort();
+        encoded_conditions.hash(state);
+
+        let mut encoded_vars = self
+            .variables
             .iter()
             .map(|c| c.to_string())
-            .collect::<Vec<String>>()
-            .sort()
-            .hash(state);
+            .collect::<Vec<String>>();
+
+        encoded_vars.sort();
+        encoded_vars.hash(state);
     }
 }
 

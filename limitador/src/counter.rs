@@ -31,12 +31,14 @@ impl Hash for Counter {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.limit.hash(state);
 
-        self.set_variables
+        let mut encoded_vars = self
+            .set_variables
             .iter()
             .map(|(k, v)| k.to_owned() + ":" + v)
-            .collect::<Vec<String>>()
-            .sort()
-            .hash(state);
+            .collect::<Vec<String>>();
+
+        encoded_vars.sort();
+        encoded_vars.hash(state);
     }
 }
 
