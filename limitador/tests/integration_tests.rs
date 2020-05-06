@@ -6,17 +6,15 @@ use std::collections::{HashMap, HashSet};
 
 #[test]
 fn add_a_limit() {
+    let limit = Limit::new(
+        "test_namespace",
+        10,
+        60,
+        vec!["req.method == GET"],
+        vec!["req.method", "app_id"],
+    );
+
     let mut rate_limiter = RateLimiter::new();
-
-    let mut conditions = HashSet::new();
-    conditions.insert("req.method == GET".to_string());
-
-    let mut variables = HashSet::new();
-    variables.insert("req.method".to_string());
-    variables.insert("app_id".to_string());
-
-    let limit = Limit::new("test_namespace", 10, 60, conditions, variables);
-
     rate_limiter.add_limit(limit.clone());
 
     let mut expected_result = HashSet::new();
@@ -31,17 +29,15 @@ fn add_a_limit() {
 fn rate_limited() {
     let max_hits = 3;
 
+    let limit = Limit::new(
+        "test_namespace",
+        max_hits,
+        60,
+        vec!["req.method == GET"],
+        vec!["req.method", "app_id"],
+    );
+
     let mut rate_limiter = RateLimiter::new();
-
-    let mut conditions = HashSet::new();
-    conditions.insert("req.method == GET".to_string());
-
-    let mut variables = HashSet::new();
-    variables.insert("req.method".to_string());
-    variables.insert("app_id".to_string());
-
-    let limit = Limit::new("test_namespace", max_hits, 10, conditions, variables);
-
     rate_limiter.add_limit(limit.clone());
 
     let mut values: HashMap<String, String> = HashMap::new();

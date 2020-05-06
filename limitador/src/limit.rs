@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
+use std::iter::FromIterator;
 
 #[derive(Eq, PartialEq, Debug, Clone, Deserialize)]
 pub struct Limit {
@@ -12,19 +13,19 @@ pub struct Limit {
 }
 
 impl Limit {
-    pub fn new<S: Into<String>>(
-        namespace: S,
+    pub fn new(
+        namespace: impl Into<String>,
         max_value: i64,
         seconds: u64,
-        conditions: HashSet<String>,
-        variables: HashSet<String>,
+        conditions: impl IntoIterator<Item = impl Into<String>>,
+        variables: impl IntoIterator<Item = impl Into<String>>,
     ) -> Limit {
         Limit {
             namespace: namespace.into(),
             max_value,
             seconds,
-            conditions,
-            variables,
+            conditions: HashSet::from_iter(conditions.into_iter().map(|cond| cond.into())),
+            variables: HashSet::from_iter(variables.into_iter().map(|var| var.into())),
         }
     }
 
@@ -86,13 +87,7 @@ mod tests {
 
     #[test]
     fn limit_applies() {
-        let mut conditions: HashSet<String> = HashSet::new();
-        conditions.insert("x == 5".into());
-
-        let mut variables: HashSet<String> = HashSet::new();
-        variables.insert("y".into());
-
-        let limit = Limit::new("test_namespace", 10, 60, conditions, variables);
+        let limit = Limit::new("test_namespace", 10, 60, vec!["x == 5"], vec!["y"]);
 
         let mut values: HashMap<String, String> = HashMap::new();
         values.insert("x".into(), "5".into());
@@ -102,13 +97,7 @@ mod tests {
 
     #[test]
     fn limit_does_not_apply() {
-        let mut conditions: HashSet<String> = HashSet::new();
-        conditions.insert("x == 5".into());
-
-        let mut variables: HashSet<String> = HashSet::new();
-        variables.insert("y".into());
-
-        let limit = Limit::new("test_namespace", 10, 60, conditions, variables);
+        let limit = Limit::new("test_namespace", 10, 60, vec!["x == 5"], vec!["y"]);
 
         let mut values: HashMap<String, String> = HashMap::new();
         values.insert("x".into(), "1".into());
