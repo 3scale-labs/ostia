@@ -42,8 +42,8 @@ services:
 
   rate-limit:
     build:
-      context: limitador
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: limitador/Dockerfile
     networks:
       envoymesh:
         aliases:
