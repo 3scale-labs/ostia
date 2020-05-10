@@ -6,7 +6,7 @@ use limitador::limit::Limit;
 use limitador::RateLimiter;
 use std::collections::HashMap;
 use std::env;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tonic::{transport::Server, Request, Response, Status};
 
 const LIMITS_FILE_ENV: &str = "LIMITS_FILE";
@@ -14,25 +14,24 @@ const LIMITS_FILE_ENV: &str = "LIMITS_FILE";
 include!("envoy.rs");
 
 pub struct MyRateLimiter {
-    limiter: Arc<Mutex<RateLimiter>>,
+    limiter: Arc<tokio::sync::Mutex<RateLimiter>>,
 }
 
 impl MyRateLimiter {
     pub fn new() -> MyRateLimiter {
-        let rate_limiter = MyRateLimiter {
-            limiter: Arc::new(Mutex::new(RateLimiter::new())),
-        };
-
         match env::var(LIMITS_FILE_ENV) {
             Ok(val) => {
                 let f = std::fs::File::open(val).unwrap();
                 let limits: Vec<Limit> = serde_yaml::from_reader(f).unwrap();
 
+                let mut rate_limiter = RateLimiter::new();
                 for limit in limits {
-                    rate_limiter.limiter.lock().unwrap().add_limit(limit);
+                    rate_limiter.add_limit(limit);
                 }
 
-                rate_limiter
+                MyRateLimiter {
+                    limiter: Arc::new(tokio::sync::Mutex::new(rate_limiter)),
+                }
             }
             _ => panic!("LIMITS_FILE env not set"),
         }
@@ -67,13 +66,9 @@ impl RateLimitService for MyRateLimiter {
         // TODO: lock rate_limited and update_counters together.
         // Although some users might decide to call them separately.
 
-        let rate_limited = self.limiter.lock().unwrap().is_rate_limited(&values);
+        let rate_limited = self.limiter.lock().await.is_rate_limited(&values);
 
-        self.limiter
-            .lock()
-            .unwrap()
-            .update_counters(&values)
-            .unwrap();
+        self.limiter.lock().await.update_counters(&values).unwrap();
 
         let overall_code = if rate_limited.unwrap() { 2 } else { 1 };
 
