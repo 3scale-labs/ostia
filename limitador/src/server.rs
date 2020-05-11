@@ -90,7 +90,13 @@ impl RateLimitService for MyRateLimiter {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "0.0.0.0:50052".parse()?;
+    let host = env::var("HOST").unwrap_or_else(|_| String::from("[::1]"));
+    let port = env::var("PORT").unwrap_or_else(|_| String::from("50052"));
+
+    let addr = format!("{host}:{port}", host = host, port = port).parse()?;
+
+    println!("Listening on {}", addr);
+
     let rate_limiter = MyRateLimiter::default();
 
     Server::builder()
