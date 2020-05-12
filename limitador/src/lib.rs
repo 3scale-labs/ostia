@@ -1,6 +1,7 @@
 use crate::counter::Counter;
 use crate::limit::Limit;
-use crate::storage::{InMemoryStorage, Storage};
+use crate::storage::in_memory::InMemoryStorage;
+use crate::storage::Storage;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt;
@@ -36,13 +37,13 @@ impl Error for MissingNamespaceErr {
 }
 
 pub struct RateLimiter {
-    storage: InMemoryStorage, // TODO: use trait here
+    storage: Box<dyn Storage>,
 }
 
 impl RateLimiter {
     pub fn new() -> RateLimiter {
         RateLimiter {
-            storage: InMemoryStorage::new(),
+            storage: Box::new(InMemoryStorage::new()),
         }
     }
 
