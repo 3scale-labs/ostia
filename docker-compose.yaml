@@ -44,6 +44,9 @@ services:
     build:
       context: .
       dockerfile: limitador/Dockerfile
+    environment:
+      HOST: "0.0.0.0"
+      PORT: 50052
     networks:
       envoymesh:
         aliases:
