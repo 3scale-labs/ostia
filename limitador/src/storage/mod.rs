@@ -3,6 +3,7 @@ use crate::limit::Limit;
 use std::collections::HashSet;
 
 pub mod in_memory;
+pub mod redis;
 
 pub trait Storage: Sync + Send {
     fn add_limit(&mut self, limit: Limit);

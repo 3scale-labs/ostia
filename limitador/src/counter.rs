@@ -1,8 +1,9 @@
 use crate::limit::Limit;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
-#[derive(Eq, Clone)]
+#[derive(Eq, Clone, Serialize, Deserialize)]
 pub struct Counter {
     limit: Limit,
     set_variables: HashMap<String, String>,
