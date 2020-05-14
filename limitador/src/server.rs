@@ -93,7 +93,7 @@ fn intercept(req: Request<()>) -> Result<Request<()>, Status> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let host = env::var("HOST").unwrap_or_else(|_| String::from("[::1]"));
+    let host = env::var("HOST").unwrap_or_else(|_| String::from("0.0.0.0"));
     let port = env::var("PORT").unwrap_or_else(|_| String::from("50052"));
 
     let addr = format!("{host}:{port}", host = host, port = port).parse()?;
