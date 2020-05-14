@@ -17,7 +17,6 @@ pub mod envoy {
                 include!("protobufs/envoy.config.core.v3.rs");
             }
         }
-
     }
 
     pub mod extensions {

@@ -15,7 +15,9 @@ pub struct RateLimitRequest {
     /// processed by the service (see below). If any of the descriptors are over limit, the entire
     /// request is considered to be over limit.
     #[prost(message, repeated, tag = "2")]
-    pub descriptors: ::std::vec::Vec<super::super::super::api::v2::ratelimit::RateLimitDescriptor>,
+    pub descriptors: ::std::vec::Vec<
+        super::super::super::extensions::common::ratelimit::v3::RateLimitDescriptor,
+    >,
     /// Rate limit requests can optionally specify the number of hits a request adds to the matched
     /// limit. If the value is not set in the message, a request increases the matched limit by 1.
     #[prost(uint32, tag = "3")]
@@ -35,10 +37,11 @@ pub struct RateLimitResponse {
     pub statuses: ::std::vec::Vec<rate_limit_response::DescriptorStatus>,
     /// A list of headers to add to the response
     #[prost(message, repeated, tag = "3")]
-    pub headers: ::std::vec::Vec<super::super::super::api::v2::core::HeaderValue>,
+    pub response_headers_to_add:
+        ::std::vec::Vec<super::super::super::config::core::v3::HeaderValue>,
     /// A list of headers to add to the request when forwarded
     #[prost(message, repeated, tag = "4")]
-    pub request_headers_to_add: ::std::vec::Vec<super::super::super::api::v2::core::HeaderValue>,
+    pub request_headers_to_add: ::std::vec::Vec<super::super::super::config::core::v3::HeaderValue>,
 }
 pub mod rate_limit_response {
     /// Defines an actual rate limit in terms of requests per unit of time and the unit itself.
@@ -93,6 +96,70 @@ pub mod rate_limit_response {
         OverLimit = 2,
     }
 }
+#[doc = r" Generated client implementations."]
+pub mod rate_limit_service_client {
+    #![allow(unused_variables, dead_code, missing_docs)]
+    use tonic::codegen::*;
+    pub struct RateLimitServiceClient<T> {
+        inner: tonic::client::Grpc<T>,
+    }
+    impl RateLimitServiceClient<tonic::transport::Channel> {
+        #[doc = r" Attempt to create a new client by connecting to a given endpoint."]
+        pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
+        where
+            D: std::convert::TryInto<tonic::transport::Endpoint>,
+            D::Error: Into<StdError>,
+        {
+            let conn = tonic::transport::Endpoint::new(dst)?.connect().await?;
+            Ok(Self::new(conn))
+        }
+    }
+    impl<T> RateLimitServiceClient<T>
+    where
+        T: tonic::client::GrpcService<tonic::body::BoxBody>,
+        T::ResponseBody: Body + HttpBody + Send + 'static,
+        T::Error: Into<StdError>,
+        <T::ResponseBody as HttpBody>::Error: Into<StdError> + Send,
+    {
+        pub fn new(inner: T) -> Self {
+            let inner = tonic::client::Grpc::new(inner);
+            Self { inner }
+        }
+        pub fn with_interceptor(inner: T, interceptor: impl Into<tonic::Interceptor>) -> Self {
+            let inner = tonic::client::Grpc::with_interceptor(inner, interceptor);
+            Self { inner }
+        }
+        #[doc = " Determine whether rate limiting should take place."]
+        pub async fn should_rate_limit(
+            &mut self,
+            request: impl tonic::IntoRequest<super::RateLimitRequest>,
+        ) -> Result<tonic::Response<super::RateLimitResponse>, tonic::Status> {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/envoy.service.ratelimit.v3.RateLimitService/ShouldRateLimit",
+            );
+            self.inner.unary(request.into_request(), path, codec).await
+        }
+    }
+    impl<T: Clone> Clone for RateLimitServiceClient<T> {
+        fn clone(&self) -> Self {
+            Self {
+                inner: self.inner.clone(),
+            }
+        }
+    }
+    impl<T> std::fmt::Debug for RateLimitServiceClient<T> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "RateLimitServiceClient {{ ... }}")
+        }
+    }
+}
 #[doc = r" Generated server implementations."]
 pub mod rate_limit_service_server {
     #![allow(unused_variables, dead_code, missing_docs)]
@@ -139,7 +206,7 @@ pub mod rate_limit_service_server {
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             let inner = self.inner.clone();
             match req.uri().path() {
-                "/envoy.service.ratelimit.v2.RateLimitService/ShouldRateLimit" => {
+                "/envoy.service.ratelimit.v3.RateLimitService/ShouldRateLimit" => {
                     #[allow(non_camel_case_types)]
                     struct ShouldRateLimitSvc<T: RateLimitService>(pub Arc<T>);
                     impl<T: RateLimitService> tonic::server::UnaryService<super::RateLimitRequest>
@@ -199,6 +266,6 @@ pub mod rate_limit_service_server {
         }
     }
     impl<T: RateLimitService> tonic::transport::NamedService for RateLimitServiceServer<T> {
-        const NAME: &'static str = "envoy.service.ratelimit.v2.RateLimitService";
+        const NAME: &'static str = "envoy.service.ratelimit.v3.RateLimitService";
     }
 }
