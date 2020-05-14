@@ -1,6 +1,6 @@
 use crate::counter::Counter;
 use crate::limit::Limit;
-use crate::storage::Storage;
+use crate::storage::{Storage, StorageErr};
 use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 use ttl_cache::TtlCache;
@@ -11,7 +11,7 @@ pub struct InMemoryStorage {
 }
 
 impl Storage for InMemoryStorage {
-    fn add_limit(&mut self, limit: Limit) {
+    fn add_limit(&mut self, limit: Limit) -> Result<(), StorageErr> {
         let namespace = limit.namespace().to_string();
 
         match self.limits_for_namespace.get_mut(&namespace) {
@@ -24,23 +24,29 @@ impl Storage for InMemoryStorage {
                 self.limits_for_namespace.insert(namespace, limits);
             }
         }
+
+        Ok(())
     }
 
-    fn get_limits(&self, namespace: &str) -> HashSet<Limit> {
-        match self.limits_for_namespace.get(namespace) {
+    fn get_limits(&self, namespace: &str) -> Result<HashSet<Limit>, StorageErr> {
+        let limits = match self.limits_for_namespace.get(namespace) {
             Some(limits) => limits.clone(),
             None => HashSet::new(),
-        }
+        };
+
+        Ok(limits)
     }
 
-    fn is_within_limits(&self, counter: &Counter, delta: i64) -> bool {
-        match self.counters.get(counter) {
+    fn is_within_limits(&self, counter: &Counter, delta: i64) -> Result<bool, StorageErr> {
+        let within_limits = match self.counters.get(counter) {
             Some(value) => *value - delta >= 0,
             None => true,
-        }
+        };
+
+        Ok(within_limits)
     }
 
-    fn update_counter(&mut self, counter: &Counter, delta: i64) {
+    fn update_counter(&mut self, counter: &Counter, delta: i64) -> Result<(), StorageErr> {
         match self.counters.get_mut(counter) {
             Some(value) => {
                 *value -= delta;
@@ -53,6 +59,8 @@ impl Storage for InMemoryStorage {
                 );
             }
         };
+
+        Ok(())
     }
 }
 

@@ -26,7 +26,7 @@ impl MyRateLimiter {
 
                 let mut rate_limiter = RateLimiter::new();
                 for limit in limits {
-                    rate_limiter.add_limit(limit);
+                    rate_limiter.add_limit(limit).unwrap();
                 }
 
                 MyRateLimiter {
