@@ -30,7 +30,7 @@ static_resources:
                     - stage: 0
                       actions:
                         - {source_cluster: {}}
-                        - {request_headers: {header_name: "X-Req-Method", descriptor_key: "req.method"}}
+                        - {request_headers: {header_name: ":method", descriptor_key: "req.method"}}
                         - {request_headers: {header_name: "x-ext-auth-ratelimit", descriptor_key: "user_id"}}
                         - {request_headers: {header_name: ":path", descriptor_key: "path"}}
           http_filters:
