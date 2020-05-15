@@ -1,3 +1,4 @@
+use crate::envoy::service::ratelimit::v2::rate_limit_response::Code;
 use crate::envoy::service::ratelimit::v2::rate_limit_service_server::{
     RateLimitService, RateLimitServiceServer,
 };
@@ -68,12 +69,24 @@ impl RateLimitService for MyRateLimiter {
 
         let rate_limited = self.limiter.lock().await.is_rate_limited(&values);
 
-        self.limiter.lock().await.update_counters(&values).unwrap();
-
-        let overall_code = if rate_limited.unwrap() { 2 } else { 1 };
+        // TODO: For now, deny the request if there's an error.
+        // Make this configurable.
+        let resp_code = match self.limiter.lock().await.update_counters(&values) {
+            Ok(_) => match rate_limited {
+                Ok(is_limited) => {
+                    if is_limited {
+                        Code::OverLimit
+                    } else {
+                        Code::Ok
+                    }
+                }
+                Err(_) => Code::OverLimit,
+            },
+            Err(_) => Code::OverLimit,
+        };
 
         let reply = RateLimitResponse {
-            overall_code,
+            overall_code: resp_code.into(),
             statuses: vec![],
             headers: vec![],
             request_headers_to_add: vec![],
@@ -103,10 +116,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rate_limiter = MyRateLimiter::default();
     let svc = RateLimitServiceServer::with_interceptor(rate_limiter, intercept);
 
-    Server::builder()
-        .add_service(svc)
-        .serve(addr)
-        .await?;
+    Server::builder().add_service(svc).serve(addr).await?;
 
     Ok(())
 }
