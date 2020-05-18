@@ -1,24 +1,64 @@
-FROM rust:1.43
+# Based on https://shaneutt.com/blog/rust-fast-small-docker-image-builds/
 
-RUN rustup component add rustfmt
+# ------------------------------------------------------------------------------
+# Build Stage
+# ------------------------------------------------------------------------------
 
-# copy Envoy protobufs
-WORKDIR /usr/src/ostia/envoy-xds-grpc
-COPY ./envoy-xds-grpc/ .
+FROM rust:1.43 as limitador-build
 
-WORKDIR /usr/src/ostia/limitador
+RUN apt-get update \
+ && apt-get install musl-tools -y
 
-# copy over your manifests
-COPY ./limitador/Cargo.lock ./Cargo.lock
-COPY ./limitador/Cargo.toml ./Cargo.toml
+RUN rustup target add x86_64-unknown-linux-musl \
+ && rustup component add rustfmt
 
-RUN mkdir .cargo
-RUN cargo vendor --locked > .cargo/config
+# get Envoy protobufs
+WORKDIR /usr/src/envoy-xds-grpc
+RUN git clone https://github.com/envoyproxy/data-plane-api.git \
+ && git clone https://github.com/googleapis/googleapis.git \
+ && git clone https://github.com/envoyproxy/protoc-gen-validate.git \
+ && git clone https://github.com/cncf/udpa.git
 
-COPY ./limitador .
+WORKDIR /usr/src/limitador
 
-RUN cargo install --verbose --path .
+COPY ./Cargo.lock ./Cargo.lock
+COPY ./Cargo.toml ./Cargo.toml
 
-ENV LIMITS_FILE=./examples/limits.yaml
+RUN mkdir src/
 
-CMD ["ratelimit-server"]
+RUN echo "fn main() {println!(\"if you see this, the build broke\")}" > src/main.rs \
+ && echo "fn main() {println!(\"if you see this, the build broke\")}" > src/server.rs
+
+RUN RUSTFLAGS=-Clinker=musl-gcc cargo build --release --target=x86_64-unknown-linux-musl
+
+# avoid downloading and compiling all the dependencies when there's a change in
+# our code.
+RUN rm -f target/x86_64-unknown-linux-musl/release/deps/limitador* \
+ && rm -f target/x86_64-unknown-linux-musl/release/deps/ratelimit*
+
+COPY . .
+
+RUN RUSTFLAGS=-Clinker=musl-gcc cargo build --release --target=x86_64-unknown-linux-musl
+
+
+# ------------------------------------------------------------------------------
+# Run Stage
+# ------------------------------------------------------------------------------
+
+FROM alpine:3.11
+
+RUN addgroup -g 1000 limitador \
+ && adduser -D -s /bin/sh -u 1000 -G limitador limitador
+
+WORKDIR /home/limitador/bin/
+
+COPY --from=limitador-build /usr/src/limitador/examples/limits.yaml ../
+COPY --from=limitador-build /usr/src/limitador/target/x86_64-unknown-linux-musl/release/ratelimit-server .
+
+RUN chown limitador:limitador ratelimit-server
+
+USER limitador
+
+ENV LIMITS_FILE=/home/limitador/limits.yaml
+
+CMD ["./ratelimit-server"]
