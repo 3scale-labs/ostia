@@ -41,9 +41,7 @@ services:
       - "50051"
 
   rate-limit:
-    build:
-      context: limitador
-      dockerfile: Dockerfile
+    image: quay.io/3scale/limitador:latest
     environment:
       HOST: "0.0.0.0"
       PORT: 50052
