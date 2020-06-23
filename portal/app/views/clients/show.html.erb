@@ -1,0 +1,29 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Client:</strong>
+  <%= @client.client_id %>
+</p>
+
+<p>
+  <strong>Client secret:</strong>
+  <%= @client.client_secret %>
+</p>
+
+<p>
+  <strong>Registration uri:</strong>
+  <%= @client.registration_client_uri %>
+</p>
+
+<p>
+  <strong>Registration access token:</strong>
+  <%= @client.registration_access_token %>
+</p>
+
+<p>
+  <strong>User:</strong>
+  <%= @client.user_id %>
+</p>
+
+<%= link_to 'Edit', edit_client_path(@client) %> |
+<%= link_to 'Back', clients_path %>

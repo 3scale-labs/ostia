@@ -10,6 +10,20 @@
   </head>
 
   <body>
-    <%= yield %>
+
+  <header class="page-header">
+
+    <nav>
+      <% if current_user %>
+    Logged in. <%= link_to 'Log out', logout_path %>
+        <%= link_to 'Clients', clients_path %>
+      <% else %>
+    Not logged in. <%= link_to 'Log in', login_path %>
+      <% end %>
+    </nav>
+  </header>
+
+
+  <%= yield %>
   </body>
 </html>
