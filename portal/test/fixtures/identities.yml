@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  uid: one
+  provider: keycloak
+  user: one
+
+two:
+  uid: two
+  provider: keycloak
+  user: two

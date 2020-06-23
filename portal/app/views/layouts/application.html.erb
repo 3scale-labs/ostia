@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Portal</title>
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= stylesheet_link_tag 'application', media: 'all', 'data-turbolinks-track': 'reload' %>
+    <%= javascript_pack_tag 'application', 'data-turbolinks-track': 'reload' %>
+  </head>
+
+  <body>
+
+  <header class="page-header">
+
+    <nav>
+      <% if current_user %>
+    Logged in. <%= link_to 'Log out', logout_path %>
+        <%= link_to 'Clients', clients_path %>
+      <% else %>
+    Not logged in. <%= link_to 'Log in', login_path %>
+      <% end %>
+    </nav>
+  </header>
+
+
+  <%= yield %>
+  </body>
+</html>

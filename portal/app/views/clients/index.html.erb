@@ -1,0 +1,35 @@
+<p id="notice"><%= notice %></p>
+
+<h1>Clients</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Client</th>
+      <th>Client secret</th>
+      <th>Registration uri</th>
+      <th>Registration access token</th>
+      <th>User</th>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @clients.each do |client| %>
+      <tr>
+        <td><%= client.client_id %></td>
+        <td><%= client.client_secret %></td>
+        <td><%= client.registration_client_uri %></td>
+        <td><%= client.registration_access_token %></td>
+        <td><%= client.user_id %></td>
+        <td><%= link_to 'Show', client %></td>
+        <td><%= link_to 'Edit', edit_client_path(client) %></td>
+        <td><%= link_to 'Destroy', client, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Client', new_client_path %>
