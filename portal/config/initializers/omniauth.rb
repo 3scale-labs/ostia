@@ -20,13 +20,13 @@ end
 Rails.application.config.middleware.use OmniAuth::Builder do
   provider :openid_connect, {
     name: :keycloak,
-    scope: %i[openid email profile clients],
+    scope: %i[openid email profile],
     response_type: :code,
     issuer: 'http://localhost:8080/auth/realms/portal',
     discovery: true,
     client_options: {
       identifier: 'portal',
-      secret: '69acf2ed-d28a-4e5b-8fe7-0083829d0e0f',
+      secret: '3e32f359-0e77-46d3-a056-7392b69b104f',
       redirect_uri: 'http://localhost:3000/auth/keycloak/callback'
     }
   }

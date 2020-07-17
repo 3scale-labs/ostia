@@ -4,14 +4,16 @@ module Keycloak
 
     def initialize(server: , realm: , credentials: nil)
       @url = (URI(server) + 'auth/realms/' + "#{realm}/").freeze
-      warn @url, @url.inspect
-      @http = Net::HTTP.new(@url.hostname, @url.port)
-      @http.use_ssl = @url.scheme == 'https'
-      @http.set_debug_output($stderr)
-      @http.start
 
       @auth = credentials ? { 'Authorization' => "Bearer #{credentials}" } : { }
       @discovery = Concurrent::Promises.future(&method(:fetch_discovery))
+    end
+
+    def http_client
+      http = Net::HTTP.new(@url.hostname, @url.port)
+      http.use_ssl = @url.scheme == 'https'
+      http.set_debug_output($stderr)
+      http
     end
 
     def discovery
@@ -19,21 +21,26 @@ module Keycloak
     end
 
     protected def fetch_discovery
-        decode @http.request_get(url.path + '.well-known/openid-configuration')
+      http_client.start do |http|
+        decode http.request_get(url.path + '.well-known/openid-configuration')
+      end
     end
 
     def create_client(client)
       endpoint = URI(discovery.fetch('registration_endpoint'))
       req =  ClientRegistrationRequest.new ActionController::Parameters.new(client.attributes).permit(ClientRegistrationRequest.attribute_names)
 
-      parse_client_registration @http.request_post(endpoint.path, req.to_json, @auth.merge('Content-Type' => 'application/json'))
-
+      http_client.start do |http|
+        parse_client_registration http.request_post(endpoint.path, req.to_json, @auth.merge('Content-Type' => 'application/json'))
+      end
     end
 
     def read_client(client)
       uri = URI(client.registration_client_uri)
 
-      parse_client_registration @http.request_get(uri.path, @auth.merge('Authorization' => "Bearer #{client.registration_access_token}"))
+      http_client.start do |http|
+        parse_client_registration http.request_get(uri.path, @auth.merge('Authorization' => "Bearer #{client.registration_access_token}"))
+      end
     end
 
     protected
@@ -57,6 +64,7 @@ module Keycloak
 
       attribute :client_id, :string
       attribute :client_secret, :string
+      attribute :client_name, :string
       attribute :registration_access_token, :string
       attribute :registration_client_uri, :string
       attribute :client_id_issued_at, :integer

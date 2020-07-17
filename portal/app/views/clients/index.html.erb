@@ -20,7 +20,7 @@
         <td><%= client.client_id %></td>
         <td><%= client.client_secret %></td>
         <td><%= client.registration_client_uri %></td>
-        <td><%= client.registration_access_token %></td>
+        <td><%= truncate client.registration_access_token %></td>
         <td><%= client.user_id %></td>
         <td><%= link_to 'Show', client %></td>
         <td><%= link_to 'Edit', edit_client_path(client) %></td>
