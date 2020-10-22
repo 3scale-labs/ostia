@@ -34,6 +34,7 @@ class V3AuthorizationService < Envoy::Service::Auth::V3::Authorization::Service
 
   def check(check, rest)
     puts 'check', check, rest
+    puts  check.to_json(emit_defaults: true), check.class.name
     Envoy::Service::Auth::V3::CheckResponse.new(
       status: Google::Rpc::Status.new(code: GRPC::Core::StatusCodes::OK),
       ok_response: Envoy::Service::Auth::V3::OkHttpResponse.new(
@@ -58,6 +59,7 @@ class V2AuthorizationService
 
   def check(check, rest)
     puts 'check', check, rest
+    puts  check.to_json(emit_defaults: true), check.class.name
     auth = Rack::Auth::Basic::Request.new(check.attributes.request.http.to_env)
 
     Envoy::Service::Auth::V2::CheckResponse.new(
@@ -71,6 +73,7 @@ class V2AuthorizationService
   end
 end
 
+def main
 port = '0.0.0.0:50051'
 s = GRPC::RpcServer.new
 s.add_http2_port(port, :this_port_is_insecure)
@@ -82,3 +85,6 @@ s.handle(V3AuthorizationService.new())
 #   gracefully shutdown.
 # User could also choose to run server via call to run_till_terminated
 s.run_till_terminated_or_interrupted([1, +'int', +'SIGQUIT'])
+end
+
+main if __FILE__ == $0
