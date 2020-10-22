@@ -1,10 +1,10 @@
-source 'https://rubygems.org'
+source "https://rubygems.org"
 
-gem 'grpc'
-gem 'grpc-tools'
+gem "grpc"
+gem "grpc-tools"
 
-gem 'google-protobuf'
+gem "google-protobuf"
 
-gem 'rack'
+gem "rack"
 
-gem 'pry-byebug'
+gem "pry-byebug"
