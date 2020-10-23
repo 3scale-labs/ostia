@@ -30,22 +30,12 @@ Envoy::Service::Auth::V2::AttributeContext::HttpRequest.module_eval do
   end
 end
 
-class V3AuthorizationService < Envoy::Service::Auth::V3::Authorization::Service
-  def check(check, rest)
-    puts 'check', check, rest
-    puts check.to_json(emit_defaults: true), check.class.name
-    Envoy::Service::Auth::V3::CheckResponse.new(
-      status: Google::Rpc::Status.new(code: GRPC::Core::StatusCodes::OK),
-      ok_response: Envoy::Service::Auth::V3::OkHttpResponse.new(
-        headers: [
-          Envoy::Config::Core::V3::HeaderValueOption.new(header: Envoy::Config::Core::V3::HeaderValue.new(key: 'x-ext-auth-ratelimit', value: $rate_limits[user].to_s))
-        ]
-      )
-    )
-  end
-end
-
 class V2AuthorizationService
+  attr_reader :config
+  def initialize(config)
+    @config = config
+  end
+
   include GRPC::GenericService
 
   self.marshal_class_method = :encode
@@ -75,11 +65,11 @@ end
 
 def main
   port = '0.0.0.0:50051'
+  config = Config.new ENV.fetch('CONFIG', 'examples/config.yml')
   s = GRPC::RpcServer.new
   s.add_http2_port(port, :this_port_is_insecure)
   GRPC.logger.info("... running insecurely on #{port}")
-  s.handle(V2AuthorizationService.new)
-  s.handle(V3AuthorizationService.new)
+  s.handle(V2AuthorizationService.new(config))
 
   # Runs the server with SIGHUP, SIGINT and SIGQUIT signal handlers to
   #   gracefully shutdown.

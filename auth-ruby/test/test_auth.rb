@@ -1,9 +1,11 @@
 require 'minitest/autorun'
 require_relative 'test_helper'
 require 'json'
+require 'config'
 
 describe V2AuthorizationService do
-  let(:service) { V2AuthorizationService.new }
+  let(:config) { Config.new(File.expand_path(__dir__, 'fixtures/config.yml')) }
+  let(:service) { V2AuthorizationService.new(config) }
 
   describe 'request' do
     let(:body) do
