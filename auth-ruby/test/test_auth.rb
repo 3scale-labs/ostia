@@ -1,5 +1,5 @@
 require 'minitest/autorun'
-require_relative 'auth'
+require_relative 'test_helper'
 require 'json'
 
 describe V2AuthorizationService do

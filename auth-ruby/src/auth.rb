@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require_relative 'envoy/service/auth/v3/external_auth_services_pb'
-require_relative 'envoy/service/auth/v2/external_auth_pb'
+require 'envoy/service/auth/v3/external_auth_services_pb'
+require 'envoy/service/auth/v2/external_auth_pb'
 
 require 'logger'
 require 'pry'
