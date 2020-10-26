@@ -3,9 +3,8 @@ localhost:8000:
 
   identity:
     - oidc:
-          name: master
-          endpoint: http://localhost:8080/auth/realms/master
-          client_id: master
+        name: test
+        endpoint: http://localhost:8080/auth/realms/test
 
     - oidc:
         name: demo

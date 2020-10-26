@@ -53,27 +53,32 @@ class V2AuthorizationService
 
     case service = config.for_host(host)
     when Config::Service
-      ok_response(req, service)
-    else
-      denied_response("Service not found")
+      # Verify all the stuff!
+      # 1. verify identity // call OIDC, verify tokens, mTLS, basic auth
+      # 2. load metadata // load plans, metadata, jwt, etc.
+      # 3. apply authorization // user written REGO, custom yaml, our generated REGO
+
+      if verify_identity(req, service)
+        return ok_response(req, service)
+      end
     end
+
+    denied_response("Service not found")
   end
 
   protected
+
+  def verify_identity(req, service)
+    identities = service.identity.filter_map { |id| id.call(req) if id.enabled }
+    identities.any?
+  end
+
   def ok_response(req, service)
-    auth = Rack::Auth::Basic::Request.new(req.attributes.request.http.to_env)
-
-    # Verify all the stuff!
-    # 1. verify identity // call OIDC, verify tokens, mTLS, basic auth
-    # 2. load metadata // load plans, metadata, jwt, etc.
-    # 3. apply authorization // user written REGO, custom yaml, our generated REGO
-
     Envoy::Service::Auth::V2::CheckResponse.new(
       status: Google::Rpc::Status.new(code: GRPC::Core::StatusCodes::OK),
       ok_response: Envoy::Service::Auth::V2::OkHttpResponse.new(
         headers: [
-          Envoy::Api::V2::Core::HeaderValueOption.new(header: Envoy::Api::V2::Core::HeaderValue.new(key: 'x-ext-auth-ratelimit', value: $rate_limits[auth.username].to_s)),
-          Envoy::Api::V2::Core::HeaderValueOption.new(header: Envoy::Api::V2::Core::HeaderValue.new(key: 'x-ext-auth-user', value: auth.username))
+          # add headers
         ]
       )
     )
@@ -104,7 +109,7 @@ class ResponseInterceptor < GRPC::ServerInterceptor
 end
 
 def main
-  port = '0.0.0.0:50051'
+  port = "0.0.0.0:#{ENV.fetch('PORT', 50051)}"
   config = Config.new ENV.fetch('CONFIG', 'examples/config.yml')
   s = GRPC::RpcServer.new(interceptors: [ResponseInterceptor.new])
   s.add_http2_port(port, :this_port_is_insecure)

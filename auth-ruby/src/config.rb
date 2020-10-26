@@ -34,6 +34,15 @@ class Config
     class Identity < OpenStruct
       extend BuildSubclass
 
+      def call(req)
+        raise NotImplementedError, __method__
+      end
+
+      def initialize(hash = {})
+        super
+        self.enabled = !!config if self.enabled.nil?
+      end
+
       class OIDC < self
         def config
           self[:config] || discover!
@@ -41,7 +50,30 @@ class Config
 
         def discover!
           self[:config] ||= ::OpenIDConnect::Discovery::Provider::Config.discover!(endpoint)
+        rescue OpenIDConnect::Discovery::DiscoveryFailed
+          self.enabled = false
+          nil
         end
+
+        def call(req)
+          id_token = decode_id_token(req)
+        rescue JSON::JWK::Set::KidNotFound
+          false
+        end
+
+        def decode_id_token(req)
+          auth = Rack::Auth::AbstractRequest.new(req.attributes.request.http.to_env)
+
+          case auth.scheme
+          when 'bearer'
+            ::OpenIDConnect::ResponseObject::IdToken.decode(auth.params, public_keys)
+          end
+        end
+
+        def public_keys
+          config.jwks
+        end
+
       end
     end
 
@@ -56,16 +88,15 @@ class Config
       end
     end
 
+    def initialize(hash = nil)
+      super
+
+      self.identity = Array(self.identity).map(&Identity.method(:build))
+      self.authorization = Array(self.authorization).map(&Authorization.method(:build))
+    end
+
     def enabled?
       !!enabled
-    end
-
-    def identity
-      Array(self[:identity]).map(&Identity.method(:build))
-    end
-
-    def authorization
-      Array(self[:authorization]).map(&Authorization.method(:build))
     end
   end
 end
