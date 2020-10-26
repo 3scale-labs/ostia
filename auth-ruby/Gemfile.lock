@@ -18,6 +18,7 @@ GEM
       byebug (~> 11.0)
       pry (~> 0.13.0)
     rack (2.2.3)
+    rake (13.0.1)
 
 PLATFORMS
   ruby
@@ -28,6 +29,7 @@ DEPENDENCIES
   grpc-tools
   pry-byebug
   rack
+  rake
 
 BUNDLED WITH
    2.1.4

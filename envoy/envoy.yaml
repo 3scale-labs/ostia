@@ -37,6 +37,8 @@ static_resources:
           - name: envoy.filters.http.ext_authz
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+              failure_mode_allow: false
+              include_peer_certificate: true
               grpc_service:
                 envoy_grpc:
                   cluster_name: external_auth
@@ -44,7 +46,7 @@ static_resources:
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.filters.http.ratelimit.v3.RateLimit
               domain: "test_namespace"
-              failure_mode_deny: true
+              failure_mode_deny: false
               rate_limit_service:
                 grpc_service:
                   timeout: { seconds: 1 }

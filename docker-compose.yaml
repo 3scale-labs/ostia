@@ -11,6 +11,7 @@ services:
       - envoymesh
     environment:
       LOG_LEVEL: debug
+      COMPONENT_LOG_LEVEL: filter:trace,http:debug,router:debug
     expose:
       - "80"
       - "8001"

@@ -4,7 +4,7 @@ require 'json'
 require 'config'
 
 describe V2AuthorizationService do
-  let(:config) { Config.new(File.expand_path(__dir__, 'fixtures/config.yml')) }
+  let(:config) { Config.new(File.join(__dir__, 'fixtures/config.yml')) }
   let(:service) { V2AuthorizationService.new(config) }
 
   describe 'request' do

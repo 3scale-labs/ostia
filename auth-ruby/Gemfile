@@ -8,3 +8,5 @@ gem "google-protobuf"
 gem "rack"
 
 gem "pry-byebug"
+
+gem 'rake'

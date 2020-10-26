@@ -1,0 +1,27 @@
+localhost:8000:
+  enabled: true
+
+  identity:
+    - oidc:
+        name: demo
+        discovery_endpoint: https://localhost:8443/realms/demo/
+
+    - oidc:
+        name: admin
+        discovery_endpoint: https://localhost:8443/realms/admin/
+
+  authorization:
+    - opa:
+        rego: |
+          allow {
+            input.method == "PUT"
+            some petid
+            input.path = ["pets", petid]
+            input.user == input.owner
+          }
+    - jwt:
+        match:
+          http:
+            path: '/api/*'
+        claim:
+          aud: api

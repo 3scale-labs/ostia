@@ -7,6 +7,7 @@ require 'logger'
 require 'pry'
 
 require 'rack/auth/basic'
+require_relative 'config'
 
 module RubyLogger
   def logger
@@ -46,10 +47,26 @@ class V2AuthorizationService
   # incoming request, and returns status `OK` or not `OK`.
   rpc :Check, Envoy::Service::Auth::V2::CheckRequest, Envoy::Service::Auth::V2::CheckResponse
 
-  def check(check, rest)
-    puts 'check', check, rest
-    puts check.to_json(emit_defaults: true), check.class.name
-    auth = Rack::Auth::Basic::Request.new(check.attributes.request.http.to_env)
+  def check(req, rest)
+    GRPC.logger.debug(req.class.name) { req.to_json(emit_defaults: true) }
+    host = req.attributes.request.http.host
+
+    case service = config.for_host(host)
+    when Config::Service
+      ok_response(req, service)
+    else
+      denied_response("Service not found")
+    end
+  end
+
+  protected
+  def ok_response(req, service)
+    auth = Rack::Auth::Basic::Request.new(req.attributes.request.http.to_env)
+
+    # Verify all the stuff!
+    # 1. verify identity // call OIDC, verify tokens, mTLS, basic auth
+    # 2. load metadata // load plans, metadata, jwt, etc.
+    # 3. apply authorization // user written REGO, custom yaml, our generated REGO
 
     Envoy::Service::Auth::V2::CheckResponse.new(
       status: Google::Rpc::Status.new(code: GRPC::Core::StatusCodes::OK),
@@ -61,12 +78,35 @@ class V2AuthorizationService
       )
     )
   end
+
+  def denied_response(message)
+    Envoy::Service::Auth::V2::CheckResponse.new(
+      status: Google::Rpc::Status.new(code: GRPC::Core::StatusCodes::NOT_FOUND),
+      denied_response: Envoy::Service::Auth::V2::DeniedHttpResponse.new(
+        status: Envoy::Type::HttpStatus.new(code: Envoy::Type::StatusCode::NotFound),
+        body: message,
+        headers: [
+          Envoy::Api::V2::Core::HeaderValueOption.new(header: Envoy::Api::V2::Core::HeaderValue.new(key: 'x-ext-auth-reason', value: "not_found")),
+        ]
+      )
+    )
+  end
+end
+
+class ResponseInterceptor < GRPC::ServerInterceptor
+  def request_response(request:, call:, method:)
+    GRPC.logger.info("Received request/response call at method #{method}" \
+      " with request #{request} for call #{call}")
+
+    GRPC.logger.info("[GRPC::Ok] (#{method.owner.name}.#{method.name})")
+    yield
+  end
 end
 
 def main
   port = '0.0.0.0:50051'
   config = Config.new ENV.fetch('CONFIG', 'examples/config.yml')
-  s = GRPC::RpcServer.new
+  s = GRPC::RpcServer.new(interceptors: [ResponseInterceptor.new])
   s.add_http2_port(port, :this_port_is_insecure)
   GRPC.logger.info("... running insecurely on #{port}")
   s.handle(V2AuthorizationService.new(config))

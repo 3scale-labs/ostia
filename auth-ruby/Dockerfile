@@ -12,4 +12,4 @@ RUN bundle install
 COPY . .
 
 ENTRYPOINT [ "sh", "-c" ]
-CMD ["exec ruby -I. auth.rb"]
+CMD ["exec rake start"]

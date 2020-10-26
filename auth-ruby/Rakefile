@@ -2,6 +2,19 @@ task :generate do
   sh "grpc_tools_ruby_protoc -I../envoy-xds-grpc/googleapis -I../envoy-xds-grpc/data-plane-api -I../envoy-xds-grpc/protoc-gen-validate -I../envoy-xds-grpc/data-plane-api -I../envoy-xds-grpc/udpa @../envoy-xds-grpc/auth --ruby_out=grpc"
 end
 
-task default: :generate do
+task default: %i[generate start]
+
+task :start do
   ruby "-Igrpc -Isrc src/auth.rb"
+end
+
+task :app do
+  $LOAD_PATH << 'src' << 'grpc'
+
+  require 'auth'
+end
+
+task :console => %i[app] do
+  require 'pry'
+  Pry.start
 end
