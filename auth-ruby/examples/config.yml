@@ -3,12 +3,17 @@ localhost:8000:
 
   identity:
     - oidc:
+          name: master
+          endpoint: http://localhost:8080/auth/realms/master
+          client_id: master
+
+    - oidc:
         name: demo
-        discovery_endpoint: https://localhost:8443/realms/demo/
+        endpoint: https://localhost:8443/realms/demo/
 
     - oidc:
         name: admin
-        discovery_endpoint: https://localhost:8443/realms/admin/
+        endpoint: https://localhost:8443/realms/admin/
 
   authorization:
     - opa:

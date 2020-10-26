@@ -6,6 +6,7 @@ gem "grpc-tools"
 gem "google-protobuf"
 
 gem "rack"
+gem 'openid_connect'
 
 gem "pry-byebug"
 

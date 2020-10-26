@@ -35,6 +35,13 @@ class Config
       extend BuildSubclass
 
       class OIDC < self
+        def config
+          self[:config] || discover!
+        end
+
+        def discover!
+          self[:config] ||= ::OpenIDConnect::Discovery::Provider::Config.discover!(endpoint)
+        end
       end
     end
 
@@ -61,4 +68,25 @@ class Config
       Array(self[:authorization]).map(&Authorization.method(:build))
     end
   end
+end
+
+require 'openid_connect'
+
+Module.new do
+  ### Monkey patch to keep the desired scheme of the issuer instead forcing it into https
+
+  attr_reader :scheme
+
+  def initialize(uri)
+    @scheme = uri.scheme
+    super
+  end
+
+  def endpoint
+    URI::Generic.build(scheme: scheme, host: host, port: port, path: path)
+  rescue URI::Error => e
+    raise SWD::Exception.new(e.message)
+  end
+
+  prepend_features(::OpenIDConnect::Discovery::Provider::Config::Resource)
 end
