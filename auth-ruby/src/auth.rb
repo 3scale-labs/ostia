@@ -69,7 +69,7 @@ class V2AuthorizationService
   protected
 
   def verify_identity(req, service)
-    identities = service.identity.filter_map { |id| id.call(req) if id.enabled }
+    identities = service.identity.filter_map { |id| [ id, id.call(req) ] if id.enabled }.to_h
     identities.any?
   end
 
