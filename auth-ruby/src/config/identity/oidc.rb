@@ -25,15 +25,17 @@ class Config::Identity::OIDC < Config::Identity
   end
 
   def discover!
+    raise OpenIDConnect::Discovery::DiscoveryFailed unless endpoint
+
     self[:config] ||= ::OpenIDConnect::Discovery::Provider::Config.discover!(endpoint)
   rescue OpenIDConnect::Discovery::DiscoveryFailed
     self.enabled = false
     nil
   end
 
-  def call(req)
-    id_token = decode_id_token(req)
-  rescue JSON::JWK::Set::KidNotFound
+  def call(context)
+    id_token = decode_id_token(context.request)
+  rescue JSON::JWK::Set::KidNotFound, JSON::JWS::VerificationFailed
     false
   end
 
@@ -47,7 +49,7 @@ class Config::Identity::OIDC < Config::Identity
   end
 
   def public_keys
-    config.jwks
+    config&.jwks
   end
 
 end

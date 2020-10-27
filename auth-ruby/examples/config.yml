@@ -14,6 +14,12 @@ localhost:8000:
         name: admin
         endpoint: https://localhost:8443/realms/admin/
 
+  metadata:
+    - userinfo:
+        oidc: test
+        client_id: test
+        client_secret: test
+
   authorization:
     - opa:
         rego: |

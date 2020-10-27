@@ -1,10 +1,11 @@
+# frozen_string_literal: true
+
 require 'yaml/store'
 
 class Config
   def initialize(file)
     @store = YAML::Store.new(file)
   end
-
 
   def for_host(name)
     @store.transaction(true) do
@@ -21,9 +22,9 @@ class Config
     class AmbiguousKeysError < StandardError; end
 
     def build(object)
-      name = object.keys.tap { |keys| raise AmbiguousKeysError, keys if keys.size > 1  }.first
+      name = object.keys.tap { |keys| raise AmbiguousKeysError, keys if keys.size > 1 }.first
 
-      const = constants(false).find { |const|  const.to_s.downcase == name.to_s.downcase }
+      const = constants(false).find { |const| const.to_s.downcase == name.to_s.downcase }
 
       const_get(const, false).new(object.fetch(name))
     end
@@ -35,8 +36,9 @@ class Config
     def initialize(hash = nil)
       super
 
-      self.identity = Array(self.identity).map(&Config::Identity.method(:build))
-      self.authorization = Array(self.authorization).map(&Config::Authorization.method(:build))
+      self.identity = Array(identity).map(&Config::Identity.method(:build))
+      self.authorization = Array(authorization).map(&Config::Authorization.method(:build))
+      self.metadata = Array(metadata).map(&Config::Metadata.method(:build))
     end
 
     def enabled?
@@ -47,3 +49,4 @@ end
 
 require_relative 'config/identity'
 require_relative 'config/authorization'
+require_relative 'config/metadata'

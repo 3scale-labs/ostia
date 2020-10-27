@@ -9,6 +9,12 @@ class Config::Identity < OpenStruct
     super
     self.enabled = !!config if self.enabled.nil?
   end
+
+  def self.[](name)
+    ->(other) do
+      self === other && other&.name == name
+    end
+  end
 end
 
 require_relative 'identity/oidc'

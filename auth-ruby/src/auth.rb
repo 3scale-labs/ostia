@@ -47,6 +47,32 @@ class V2AuthorizationService
   # incoming request, and returns status `OK` or not `OK`.
   rpc :Check, Envoy::Service::Auth::V2::CheckRequest, Envoy::Service::Auth::V2::CheckResponse
 
+  class Context
+    attr_reader :identity, :metadata
+    attr_reader :request, :service
+
+    def initialize(request, service)
+      @request = request
+      @service = service
+      @identity = {}
+      @metadata = {}
+    end
+
+    def evaluate!
+      proc = ->(obj, result) { result[obj] = obj.call(self) }
+
+      service.identity.each_with_object(identity, &proc)
+      service.metadata.each_with_object(metadata, &proc)
+
+      @identity.freeze
+      @metadata.freeze
+    end
+
+    def valid?
+      identity.values.any?
+    end
+  end
+
   def check(req, rest)
     GRPC.logger.debug(req.class.name) { req.to_json(emit_defaults: true) }
     host = req.attributes.request.http.host
@@ -58,8 +84,14 @@ class V2AuthorizationService
       # 2. load metadata // load plans, metadata, jwt, etc.
       # 3. apply authorization // user written REGO, custom yaml, our generated REGO
 
-      if verify_identity(req, service)
+      context = Context.new(req, service)
+
+      context.evaluate!
+
+      if context.valid?
         return ok_response(req, service)
+      else
+        return denied_response("Not authorized")
       end
     end
 
@@ -68,10 +100,6 @@ class V2AuthorizationService
 
   protected
 
-  def verify_identity(req, service)
-    identities = service.identity.filter_map { |id| [ id, id.call(req) ] if id.enabled }.to_h
-    identities.any?
-  end
 
   def ok_response(req, service)
     Envoy::Service::Auth::V2::CheckResponse.new(
