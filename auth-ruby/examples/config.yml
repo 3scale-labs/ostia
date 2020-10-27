@@ -22,12 +22,17 @@ localhost:8000:
 
   authorization:
     - opa:
+        endpoint: http://localhost:8181/v1/data/ostia/authz/localhost
         rego: |
           allow {
-            input.method == "PUT"
-            some petid
-            input.path = ["pets", petid]
-            input.user == input.owner
+            input.method == "GET"
+            input.path = ["pets"]
+          }
+
+          allow {
+            input.method == "POST"
+            input.path = ["pets"]
+            input.context.identity.roles[_] == "admin"
           }
     - jwt:
         match:

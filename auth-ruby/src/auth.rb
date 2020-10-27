@@ -48,7 +48,7 @@ class V2AuthorizationService
   rpc :Check, Envoy::Service::Auth::V2::CheckRequest, Envoy::Service::Auth::V2::CheckResponse
 
   class Context
-    attr_reader :identity, :metadata
+    attr_reader :identity, :metadata, :authorization
     attr_reader :request, :service
 
     def initialize(request, service)
@@ -56,6 +56,7 @@ class V2AuthorizationService
       @service = service
       @identity = {}
       @metadata = {}
+      @authorization = {}
     end
 
     def evaluate!
@@ -63,13 +64,24 @@ class V2AuthorizationService
 
       service.identity.each_with_object(identity, &proc)
       service.metadata.each_with_object(metadata, &proc)
+      service.authorization.each_with_object(authorization, &proc)
 
       @identity.freeze
       @metadata.freeze
+      @authorization.freeze
     end
 
     def valid?
-      identity.values.any?
+      identity.values.any? && authorization.values.all?(&:authorized?)
+    end
+
+    def to_h
+      {
+        request: request,
+        service: service,
+        identity: identity.transform_keys(&:name).transform_values(&:to_h),
+        metadata: metadata.transform_keys{ |key| key.class.to_s.demodulize.underscore }
+      }.transform_values(&:to_h)
     end
   end
 

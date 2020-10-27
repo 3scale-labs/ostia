@@ -53,6 +53,25 @@ services:
     expose:
       - "50052"
 
+  opa-service:
+    image: openpolicyagent/opa
+    volumes:
+      - ./auth-ruby/examples/policies:/etc/policies
+    ports:
+      - "8181:8181"
+    expose:
+      - "8181"
+    command:
+      - run
+      - --server
+      - --log-level=debug
+      - --log-format=json-pretty
+      - --set=decision_logs.console=true
+      - /etc/policies
+    networks:
+      envoymesh:
+        aliases:
+          - opa-service
 
 networks:
   envoymesh: {}

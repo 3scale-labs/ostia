@@ -56,6 +56,9 @@ class Config::Identity::OIDC < Config::Identity
       @token
     end
 
+    delegate :as_json, to: :@decoded, allow_nil: true
+    alias to_h as_json
+
     private def method_missing(symbol, *args, &block)
       return super unless @decoded
       @decoded.public_send(symbol, *args, &block)
