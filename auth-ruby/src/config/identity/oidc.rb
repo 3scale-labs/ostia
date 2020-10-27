@@ -19,9 +19,19 @@ Module.new do
   prepend_features(::OpenIDConnect::Discovery::Provider::Config::Resource)
 end
 
+# not in the RFC, but keycloak has it
+OpenIDConnect::Discovery::Provider::Config::Response.attr_optional :token_introspection_endpoint
+
 class Config::Identity::OIDC < Config::Identity
   def config
-    self[:config] || discover!
+    case config = self[:config]
+    when nil
+      discover!
+    when Hash
+      self[:config] = OpenStruct.new(config)
+    else
+      config
+    end
   end
 
   def discover!
@@ -33,9 +43,28 @@ class Config::Identity::OIDC < Config::Identity
     nil
   end
 
+  class Token
+    def initialize(token)
+      @token = token
+    end
+
+    def decode!(keys)
+      @decoded = ::OpenIDConnect::ResponseObject::IdToken.decode(@token, keys)
+    end
+
+    def to_s
+      @token
+    end
+
+    private def method_missing(symbol, *args, &block)
+      return super unless @decoded
+      @decoded.public_send(symbol, *args, &block)
+    end
+  end
+
   def call(context)
     id_token = decode_id_token(context.request)
-  rescue JSON::JWK::Set::KidNotFound, JSON::JWS::VerificationFailed
+  rescue JSON::JWK::Set::KidNotFound, JSON::JWS::VerificationFailed => err
     false
   end
 
@@ -44,7 +73,7 @@ class Config::Identity::OIDC < Config::Identity
 
     case auth.scheme
     when 'bearer'
-      ::OpenIDConnect::ResponseObject::IdToken.decode(auth.params, public_keys)
+      Token.new(auth.params).tap { |t| t.decode!(public_keys) }
     end
   end
 
