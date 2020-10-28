@@ -154,19 +154,24 @@ localhost:8000:
 
   authorization:
     - opa:
-        endpoint: http://localhost:8181/v1/data/ostia/authz/localhost
+        uuid: 8fa79d93-0f93-4e23-8c2a-666be266cad1
         rego: |
           allow {
-            input.method == "GET"
-            input.path = ["pets"]
+            http_request.method == "GET"
+            path_arr = ["pets"]
           }
 
           allow {
-            input.method == "POST"
-            input.path = ["pets"]
-            input.context.identity.roles[_] == "admin"
+            http_request.method == "GET"
+            path_arr = ["pets", "stats"]
+            is_admin
+          }
+
+          is_admin {
+            metadata.user_info.roles[_] == "admin"
           }
     - jwt:
+        enabled: false
         match:
           http:
             path: '/api/*'

@@ -35,6 +35,7 @@ class V2AuthorizationService
   attr_reader :config
   def initialize(config)
     @config = config
+    @registry = PolicyRegistry.setup!(config)
   end
 
   include GRPC::GenericService
@@ -72,7 +73,7 @@ class V2AuthorizationService
     end
 
     def valid?
-      identity.values.any? && authorization.values.all?(&:authorized?)
+      identity.values.any? && authorization.select { |config, _| config.enabled? }.values.all?(&:authorized?)
     end
 
     def to_h
@@ -112,7 +113,6 @@ class V2AuthorizationService
 
   protected
 
-
   def ok_response(req, service)
     Envoy::Service::Auth::V2::CheckResponse.new(
       status: Google::Rpc::Status.new(code: GRPC::Core::StatusCodes::OK),
@@ -145,6 +145,24 @@ class ResponseInterceptor < GRPC::ServerInterceptor
 
     GRPC.logger.info("[GRPC::Ok] (#{method.owner.name}.#{method.name})")
     yield
+  end
+end
+
+class PolicyRegistry
+  def self.setup!(config)
+    new(config).setup!
+  end
+
+  def initialize(config)
+    @config = config
+  end
+
+  attr_reader :config
+
+  def setup!
+    config.each_host.flat_map(&:authorization).map do |authorization|
+      authorization.try(:register!)
+    end
   end
 end
 

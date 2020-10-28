@@ -18,6 +18,14 @@ class Config
     end
   end
 
+  def host_names
+    @store.transaction(true) { @store.roots }
+  end
+
+  def each_host(&block)
+    host_names.map(&method(:for_host)).map(&block)
+  end
+
   module BuildSubclass
     class AmbiguousKeysError < StandardError; end
 

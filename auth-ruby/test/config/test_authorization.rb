@@ -9,7 +9,7 @@ describe Config::Authorization do
 
   describe 'opa' do
     let(:described_class) { Config::Authorization::OPA }
-    let(:input) { JSON.parse(file_fixture('opa_input.json').read)['input'] }
+    let(:input) { JSON.parse(file_fixture('opa_input_forbidden.json').read)['input'] }
     let(:config) { authorization_config.first['opa'] }
     let(:context) do
       OpenStruct.new(to_h: {
@@ -21,6 +21,10 @@ describe Config::Authorization do
 
     subject do
       described_class.new(config)
+    end
+
+    before do
+      subject.register!
     end
 
     it 'wraps the response' do
