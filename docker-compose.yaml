@@ -12,28 +12,33 @@ services:
     environment:
       LOG_LEVEL: debug
       COMPONENT_LOG_LEVEL: filter:trace,http:debug,router:debug
+      NGINX_HTTP_PORT_NUMBER: 8000
     expose:
-      - "80"
+      - "8000"
       - "8001"
     ports:
-      - "8000:80"
+      - "8000:8000"
       - "8001:8001"
 
   app:
     build:
       context: app
       dockerfile: Dockerfile
+    environment:
+      PORT: 3000
     networks:
       envoymesh:
         aliases:
           - app
     expose:
-      - "8080"
+      - "3000"
 
   ext-auth:
     build:
       context: auth-ruby
       dockerfile: Dockerfile
+    depends_on:
+      - opa-service
     networks:
       envoymesh:
         aliases:
@@ -69,6 +74,21 @@ services:
       envoymesh:
         aliases:
           - opa-service
+
+  keycloak:
+    image: jboss/keycloak
+    environment:
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: p
+      KEYCLOAK_IMPORT: /tmp/import-realm.json -Dkeycloak.profile.feature.upload_scripts=enabled
+    volumes:
+      - ./keycloak-realm.json:/tmp/import-realm.json
+    ports:
+      - "8080:8080"
+    networks:
+      envoymesh:
+        aliases:
+          - keycloak
 
 networks:
   envoymesh: {}

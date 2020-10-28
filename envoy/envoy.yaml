@@ -3,10 +3,10 @@ static_resources:
   - address:
       socket_address:
         address: 0.0.0.0
-        port_value: 80
+        port_value: 8000
     filter_chains:
     - filters:
-      
+
       - name: envoy.http_connection_manager
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
@@ -109,7 +109,7 @@ static_resources:
             address:
               socket_address:
                 address: app
-                port_value: 8080
+                port_value: 3000
 
 admin:
   access_log_path: "/dev/null"
