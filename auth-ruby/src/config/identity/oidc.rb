@@ -20,7 +20,8 @@ Module.new do
 end
 
 # not in the RFC, but keycloak has it
-OpenIDConnect::Discovery::Provider::Config::Response.attr_optional :token_introspection_endpoint
+OpenIDConnect::Discovery::Provider::Config::Response.attr_optional :token_introspection_endpoint, :introspection_endpoint
+OpenIDConnect::ResponseObject::IdToken.attr_optional :realm_access, :resource_access, :scope, :email_verified, :preferred_username, :email
 
 class Config::Identity::OIDC < Config::Identity
   def config
@@ -55,6 +56,9 @@ class Config::Identity::OIDC < Config::Identity
     def to_s
       @token
     end
+
+    delegate :raw_attributes, to: :@decoded, allow_nil: true
+    alias to_h raw_attributes # because OpenIDConnect::ResponseObject::IdToken#as_json will only return string values
 
     private def method_missing(symbol, *args, &block)
       return super unless @decoded

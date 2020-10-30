@@ -12,7 +12,7 @@ class Config::Metadata < OpenStruct
       id = context.identity.fetch(oidc) { return }
       puts id
 
-      uri = URI(oidc.config.token_introspection_endpoint)
+      uri = URI(oidc.config.token_introspection_endpoint || oidc.config.introspection_endpoint)
       uri.user = client_id
       uri.password = client_secret
 
