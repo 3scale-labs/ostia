@@ -38,7 +38,7 @@ services:
       context: auth-ruby
       dockerfile: Dockerfile
     depends_on:
-      - opa-service
+      - opa
     networks:
       envoymesh:
         aliases:
@@ -58,7 +58,7 @@ services:
     expose:
       - "50052"
 
-  opa-service:
+  opa:
     image: openpolicyagent/opa
     ports:
       - "8181:8181"
@@ -73,7 +73,7 @@ services:
     networks:
       envoymesh:
         aliases:
-          - opa-service
+          - opa
 
   keycloak:
     image: jboss/keycloak
